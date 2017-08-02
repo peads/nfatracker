@@ -3,6 +3,10 @@ import pandas as pd
 import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
+import urllibl
+
+url = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export"
+urllib.urlretrieve(url, "trasnfers.csv")
 
 input_file = "/home/peads/Downloads/transfers_filter_filter_filter.csv"
 df = pd.read_csv(input_file, header = 0)
