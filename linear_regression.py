@@ -22,7 +22,7 @@ def filter_outliers(row, itemType):
 		and row['Approved'] - row['CheckCashed'] >= 14 \
 		and row['FormType'] is not "Form 3 To Dealer"
 def parse_args():
-	parser = ArgumentParser(description="Predict approval data of a given NFA item based on NFATracker data.")
+	parser = ArgumentParser(description="Predict approval date of a given NFA item based on NFATracker data.")
 	parser.add_argument("-b", "--base-date", dest="basedate", required=True,
 			  help="Date around which to normalize data. Format: yyyy-MM-DD", metavar="BASEDATE")
 	parser.add_argument("-d", "--check-cashed-date", dest="date", required=True,
@@ -48,14 +48,15 @@ def main():
 	args = parse_args()
 	basedate = pd.Timestamp(args.basedate)
 	
-	#Create partial functions	
+	#Create partially applied functions	
 	norm = ft.partial(normalize_date_to_base, basedate = basedate)
 	outliers = ft.partial(filter_outliers, itemType = args.type)
 	convert_back_to_datetime = ft.partial(pd.to_datetime, origin=basedate, unit='D')
 
 	#Get data
 	url = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
-	response = urllib2.urlopen(url)
+	request = urllib2.Request(url, headers={ 'User-Agent': 'Mozilla/5.0' }) 
+	response = urllib2.urlopen(request)
 	df = pd.read_csv(response, header = 0)
 
 
@@ -68,9 +69,8 @@ def main():
 	X = df['CheckCashed']
 	y = df['Approved']
 	model = sm.OLS(y, X).fit()
-	predictions = model.predict(X)
 
-	#Convert to date
+	#Convert to date, and print
 	print np.vectorize(convert_back_to_datetime)(model.predict(norm(pd.Timestamp(args.date))))
 
 	if args.plot:
