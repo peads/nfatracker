@@ -3,24 +3,27 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 import statsmodels.api as sm
-import seaborn as sns
 import matplotlib.pyplot as plt
 import urllib2
 import functools as ft
 from argparse import ArgumentParser
-
+from statsmodels.graphics import utils
+from statsmodels.tools.tools import maybe_unwrap_results
+from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 def normalize_date_to_base(date, basedate):
 	try:
 		return (pd.to_datetime(date) - basedate).days
 	except (pd._libs.tslib.OutOfBoundsDatetime, ValueError):
 		return normalize_date_to_base(pd.Timestamp.min, basedate)
+
 def filter_outliers(row, itemType):
 	return row['CheckCashed'] >= 0 and row['Approved'] >= 0 \
 		and row['CheckCashed'] < row['Approved'] \
 		and row['NFAItem'] == itemType \
 		and row['Approved'] - row['CheckCashed'] >= 14 \
 		and row['FormType'] is not "Form 3 To Dealer"
+
 def parse_args():
 	parser = ArgumentParser(description="Predict approval date of a given NFA item based on NFATracker data.")
 	parser.add_argument("-b", "--base-date", dest="basedate", required=True,
@@ -37,17 +40,41 @@ def parse_args():
 		help="Default: does not plot linear regression.")
 	parser.set_defaults(plot=False)
 	return parser.parse_args()
-	
-def plot_regression(df):
-	#Plot linear regression
-	sns.lmplot(x='CheckCashed',y='Approved',data=df,fit_reg=True) 
-	#sns.regplot(x='CheckCashed',y='Approved', data=df, order=2)
-	plt.show()
+
+def plot_fit(results, exog_idx, y_true=None, ax=None, **kwargs):
+    fig, ax = utils.create_mpl_ax(ax)
+
+    exog_name, exog_idx = utils.maybe_name_or_idx(exog_idx, results.model)
+    results = maybe_unwrap_results(results)
+
+    #maybe add option for wendog, wexog
+    y = results.model.endog
+    x1 = results.model.exog[:, exog_idx]
+    x1_argsort = np.argsort(x1)
+    y = y[x1_argsort]
+    x1 = x1[x1_argsort]
+
+    ax.plot(x1, y, 'bo', label=results.model.endog_names)
+    if not y_true is None:
+        ax.plot(x1, y_true[x1_argsort], 'b-', label='True values')
+    title = 'Fitted values versus %s' % exog_name
+
+    prstd, iv_l, iv_u = wls_prediction_std(results)
+    ax.plot(x1, results.fittedvalues[x1_argsort], '-', color='r',
+            label='fitted', **kwargs)
+
+    ax.set_title(title)
+    ax.set_xlabel(exog_name)
+    ax.set_ylabel(results.model.endog_names)
+    ax.legend(loc='best', numpoints=1)
+
+    return fig
 
 def main():
 	args = parse_args()
 	basedate = pd.Timestamp(args.basedate)
-	
+	date = pd.Timestamp(args.date)
+
 	#Create partially applied functions	
 	norm = ft.partial(normalize_date_to_base, basedate = basedate)
 	outliers = ft.partial(filter_outliers, itemType = args.type)
@@ -71,10 +98,17 @@ def main():
 	model = sm.OLS(y, X).fit()
 
 	#Convert to date, and print
-	print np.vectorize(convert_back_to_datetime)(model.predict(norm(pd.Timestamp(args.date))))
+	date = norm(date)
+	prediction = model.predict(date)
+	print np.vectorize(convert_back_to_datetime)(prediction)
 
 	if args.plot:
-		plot_regression(df)
+		ax = df.plot(x='CheckCashed',y='Approved',kind = 'scatter')
+		fig = plot_fit(model, 0, ax=ax)
+		ax.plot(date, prediction[0], marker='o', markerfacecolor='green', markersize=15)
+		ax.annotate('Prediction', xy = (date, prediction[0]), textcoords='data')
+		plt.show()
+		#plot_regression(df, date, prediction[0])
 
 if __name__ == "__main__":
 	main()
