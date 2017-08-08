@@ -36,15 +36,15 @@ def parse_args():
     parser.add_argument("-t", "--nfa-item-type", dest="type", default='Suppressor',
                         choices=['Suppressor', 'SBR', 'SBS', 'MG', 'AOW'],
                         help="Type of NFA item on which to resrict data.", metavar="TYPE")
-    # parser.add_argument('--plot-regression', dest='plot', action='store_true',
-    #                     help="Plot a linear regression of data normalized around BASEDATE.")
-    # parser.add_argument('--no-plot-regression', dest='plot', action='store_false',
-    #                     help="Default: does not plot linear regression.")
+    parser.add_argument('--plot-regression', dest='plot', action='store_true',
+                        help="Plot a linear regression of data normalized around BASEDATE.")
+    parser.add_argument('--no-plot-regression', dest='plot', action='store_false',
+                        help="Default: does not plot linear regression.")
     parser.add_argument("-v", '--verbose', dest='verbose', action='store_true',
                         help="Print verbose information during execution.")
     parser.add_argument('--no-verbose', dest='verbose', action='store_false',
                         help="Default: does not print verbose information during execution.")
-    parser.set_defaults(verbose=False)
+    parser.set_defaults(plot=False, verbose=False)
     return parser.parse_args()
 
 #
@@ -89,31 +89,38 @@ def filter_dataframe(df, normalize_dates, filter_outliers):
     return df[df.apply(filter_outliers, axis=1)]
 
 
-# def plot_model_and_prediction(df, results, prediction, date):
-#     # Plot data
-#     ax = df.plot(x='CheckCashed', y='Approved', kind='scatter')
-#
-#     # Plot models
-#     for i, result in enumerate(results):
-#         _, iv_l, iv_u = wls_prediction_std(result)
-#         _, exog_idx = utils.maybe_name_or_idx(None, result.model)
-#         x = result.model.exog[:, exog_idx]
-#         ax.plot(x, iv_u, 'r-')
-#         ax.plot(x, iv_l, 'r-')
-#         plot_fit(result, 0, ax=ax, fittedname="Fitted %d" % (i + 1))
-#
-#     # Plot prediction
-#     xy = (date, prediction)
-#     ax.plot(*xy, marker='d', color='y')
-#     ax.annotate(xy=xy, s='Prediction', textcoords='data')
-#
-#     plt.show()
+def plot_model_and_prediction(df, mean_prediction, date, *predictions):
+    # Plot data
+    ax = df.plot(x='CheckCashed', y='Approved', kind='scatter')
+
+    # Plot models
+    # for i, result in enumerate(results):
+    #     _, iv_l, iv_u = wls_prediction_std(result)
+    #     _, exog_idx = utils.maybe_name_or_idx(None, result.model)
+    #     x = result.model.exog[:, exog_idx]
+    #     ax.plot(x, iv_u, 'r-')
+    #     ax.plot(x, iv_l, 'r-')
+    #     plot_fit(result, 0, ax=ax, fittedname="Fitted %d" % (i + 1))
+
+    # Plot prediction
+    ax_plot = ft.partial(ax.plot, marker='d')
+    ax_annotate = ft.partial(ax.annotate, textcoords='data')
+
+    for i, prediction in enumerate(predictions):
+        xy = (date, prediction)
+        ax.plot(*xy, marker='d')
+        ax.annotate(xy=xy, s=' Prediction %d' % (i+1), textcoords='data')
+
+    xy = (date, mean_prediction)
+    ax.plot(*xy, marker='d')
+    ax.annotate(xy=xy, s='Mean Prediction', textcoords='data')
+
+    plt.show()
 
 def generate_models(df):
     y, X = df['Approved'], df['CheckCashed']
     ols_model = sm.OLS(y, X, missing='raise')
-    X = sm.add_constant(X, has_constant='raise')
-    ols_model_intercept = sm.OLS(y, X, missing='raise')
+    ols_model_intercept = sm.OLS(y, sm.add_constant(X, has_constant='raise'), missing='raise')
     # ols_resid = ols_model.fit().resid
     # resid_fit = sm.OLS(ols_resid[1:], sm.add_constant(ols_resid[:-1])).fit()
     # rho = resid_fit.params[1]
@@ -124,9 +131,9 @@ def generate_models(df):
 
 def predict_scalar_or_not(result, date):
     try:
-        return result.predict((1, date))
-    except ValueError:
         return result.predict(date)
+    except ValueError:
+        return result.predict((1, date))
 
 def main():
     args = parse_args()
@@ -152,15 +159,15 @@ def main():
     predictions = tuple(map(predict, results))
     if args.verbose:
         for result, prediction in zip(results, tuple(map(np.vectorize(convert_back_to_datetime), predictions))):
-            print result.summary()
+            # print result.summary()
             print 'Predicted approval date:', prediction
 
     prediction = np.mean(predictions)
 
     print 'Predicted approval date:', np.vectorize(convert_back_to_datetime)(prediction)
 
-    # if args.plot:
-    #     plot_model_and_prediction(df, results, prediction, date)
+    if args.plot:
+        plot_model_and_prediction(df, prediction, date, *predictions)
 
 
 if __name__ == "__main__":
