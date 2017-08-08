@@ -8,9 +8,6 @@ import matplotlib.pyplot as plt
 import urllib2
 import functools as ft
 from argparse import ArgumentParser
-from statsmodels.graphics import utils
-from statsmodels.tools.tools import maybe_unwrap_results
-from statsmodels.sandbox.regression.predstd import wls_prediction_std
 
 
 def normalize_date_to_base(date, basedate):
@@ -47,34 +44,6 @@ def parse_args():
     parser.set_defaults(plot=False, verbose=False)
     return parser.parse_args()
 
-#
-# def plot_fit(results, exog_idx, y_true=None, ax=None, fittedname=None, **kwargs):
-#     fig, ax = utils.create_mpl_ax(ax)
-#
-#     exog_name, exog_idx = utils.maybe_name_or_idx(exog_idx, results.model)
-#     results = maybe_unwrap_results(results)
-#
-#     # maybe add option for wendog, wexog
-#     y = results.model.endog
-#     x1 = results.model.exog[:, exog_idx]
-#     x1_argsort = np.argsort(x1)
-#     y = y[x1_argsort]
-#     x1 = x1[x1_argsort]
-#
-#     if not y_true is None:
-#         ax.plot(x1, y_true[x1_argsort], 'g-', label='True values')
-#     title = 'Fitted values versus %s' % exog_name
-#
-#     ax.plot(x1, results.fittedvalues[x1_argsort], 'g-',
-#             label='fitted' if fittedname is None else fittedname, **kwargs)
-#
-#     ax.set_title(title)
-#     ax.set_xlabel(exog_name)
-#     ax.set_ylabel(results.model.endog_names)
-#     ax.legend(loc='best', numpoints=1)
-#
-#     return fig
-
 
 def generate_dataframe(url):
     request = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -93,47 +62,35 @@ def plot_model_and_prediction(df, mean_prediction, date, *predictions):
     # Plot data
     ax = df.plot(x='CheckCashed', y='Approved', kind='scatter')
 
-    # Plot models
-    # for i, result in enumerate(results):
-    #     _, iv_l, iv_u = wls_prediction_std(result)
-    #     _, exog_idx = utils.maybe_name_or_idx(None, result.model)
-    #     x = result.model.exog[:, exog_idx]
-    #     ax.plot(x, iv_u, 'r-')
-    #     ax.plot(x, iv_l, 'r-')
-    #     plot_fit(result, 0, ax=ax, fittedname="Fitted %d" % (i + 1))
-
     # Plot prediction
     ax_plot = ft.partial(ax.plot, marker='d')
     ax_annotate = ft.partial(ax.annotate, textcoords='data')
 
     for i, prediction in enumerate(predictions):
         xy = (date, prediction)
-        ax.plot(*xy, marker='d')
-        ax.annotate(xy=xy, s=' Prediction %d' % (i+1), textcoords='data')
+        ax_plot(*xy)
+        ax_annotate(xy=xy, s=' Prediction %d' % (i + 1))
 
     xy = (date, mean_prediction)
-    ax.plot(*xy, marker='d')
-    ax.annotate(xy=xy, s='Mean Prediction', textcoords='data')
+    ax_plot(*xy)
+    ax_annotate(xy=xy, s='Mean Prediction')
 
     plt.show()
+
 
 def generate_models(df):
     y, X = df['Approved'], df['CheckCashed']
     ols_model = sm.OLS(y, X, missing='raise')
     ols_model_intercept = sm.OLS(y, sm.add_constant(X, has_constant='raise'), missing='raise')
-    # ols_resid = ols_model.fit().resid
-    # resid_fit = sm.OLS(ols_resid[1:], sm.add_constant(ols_resid[:-1])).fit()
-    # rho = resid_fit.params[1]
-    # order = toeplitz(range(len(ols_resid)))
-    # sigma = rho**order
-    # gls_model = sm.GLS(y, X, sigma=sigma)
     return ols_model, ols_model_intercept
+
 
 def predict_scalar_or_not(result, date):
     try:
         return result.predict(date)
     except ValueError:
         return result.predict((1, date))
+
 
 def main():
     args = parse_args()
@@ -145,7 +102,6 @@ def main():
     convert_back_to_datetime = ft.partial(pd.to_datetime, origin=basedate, unit='D')
     date = norm(pd.Timestamp(args.date))
     predict = ft.partial(predict_scalar_or_not, date=date)
-
 
     # Get data
     df = generate_dataframe("http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/")
@@ -159,7 +115,7 @@ def main():
     predictions = tuple(map(predict, results))
     if args.verbose:
         for result, prediction in zip(results, tuple(map(np.vectorize(convert_back_to_datetime), predictions))):
-            # print result.summary()
+            print result.summary()
             print 'Predicted approval date:', prediction
 
     prediction = np.mean(predictions)
