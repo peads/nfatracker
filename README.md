@@ -1,6 +1,10 @@
 # nfatracker
 Statistical analysis tools for NFATracker's data
-
+## prerequisites to installation
+### Ubuntu 14.04 Server+
+    sudo apt install git libfreetype6-dev libxft-dev libpng-dev python-dev python-tk gcc g++ python-pip gfortran libblas-dev liblapack-dev
+    pip install --user numpy scipy matplotlib pandas patsy statsmodels
+## usage
     usage: linear_regression.py [-h] -b BASEDATE -d DATE [-t TYPE]
 
                             [--plot-regression] [--no-plot-regression]
