@@ -53,7 +53,8 @@ trait LinearRegression extends Operators {
     val rowProcessor = new RowListProcessor
 
     // You can configure the parser to use a RowProcessor to process the values of each parsed row.
-    // You will find more RowProcessors in the 'com.univocity.parsers.common.processor' package, but you can also create your own.
+    // You will find more RowProcessors in the 'com.univocity.parsers.common.processor' package, but you can also create
+    // your own.
     parserSettings.setProcessor(rowProcessor)
 
     // Let's consider the first parsed row as the headers of each column in the file.
@@ -70,7 +71,8 @@ trait LinearRegression extends Operators {
     (rowProcessor.getHeaders, JavaConverters.asScalaBuffer(rowProcessor.getRows).toList)
   }
 
-  private def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate): (Array[Double], Array[Double]) = {
+  private def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate):
+  (Array[Double], Array[Double]) = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
     val includedRows =
       rows.map(row =>

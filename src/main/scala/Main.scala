@@ -1,6 +1,7 @@
 import com.github.nscala_time.time.Imports._
 
-case class Config(baseDate: String = "", date: String = "", itemType: String = "", verbose: Boolean = false, plot: Boolean = false)
+case class Config(baseDate: String = "", date: String = "", itemType: String = "", verbose: Boolean = false,
+                  plot: Boolean = false)
 
 object Main extends App with LinearRegression {
 
@@ -8,10 +9,12 @@ object Main extends App with LinearRegression {
     head("NFATracker Linear Regression Analysis", "0.2")
 
     opt[String]('b', "baseDate").required.action((x, c) =>
-      c.copy(baseDate = x)).text("Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD")
+      c.copy(baseDate = x)).text("Date around which to normalize data (i.e. earliest data used in prediction). " +
+      "Format: yyyy-MM-DD")
 
     opt[String]('d', "date").required.action((x, c) =>
-      c.copy(date = x)).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
+      c.copy(date = x)).text("Date check was cashed by the NFA and for which the prediction is made. Format: " +
+      "yyyy-MM-DD")
 
     opt[String]('t', "nfa-item-type").required.action((x, c) =>
       c.copy(itemType = x)).text("Type of NFA item on which to resrict data.").
