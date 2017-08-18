@@ -1,5 +1,4 @@
 import java.awt.Color
-
 import scala.io.Source.fromURL
 import scala.util.Try
 import scala.collection.JavaConverters
@@ -8,9 +7,9 @@ import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import com.github.nscala_time.time.Imports._
 import org.joda.time.Days
-import smile.plot.Line
 import smile.regression.Operators
 
+case class Config(baseDate: String = "", date: String= "" , itemType: String= "", verbose: Boolean = false,  plot: Boolean = false)
 
 object LinearRegression extends App with Operators{
 
@@ -68,7 +67,8 @@ object LinearRegression extends App with Operators{
     ).map(_.map(s => Try(DateTime.parse(s))).filter(_.isSuccess)
     // convert dates to timestamp around given base date, filter dates before epoch
     .map(d =>Days.daysBetween(baseDate, d.get.toLocalDate).getDays.toDouble).filter(_ > 0)).filter(_.length > 1)
-    .filterNot(e => // filter ridiculous outliers
+    // filter ridiculous outliers
+    .filterNot(e =>
       {
         e(1) - e(0) < 14 || e(1) - e(0) > 1000 // fewer than two weeks, or over 1000 days
       }
@@ -79,24 +79,54 @@ object LinearRegression extends App with Operators{
     (includedRows.map{_(0)}, includedRows.map{_(1)})
   }
 
-  // filter data
-  val baseDate = DateTime.parse("2016-01-01").toLocalDate
-  val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))("Suppressor")(baseDate)
-  val plot = smile.plot.plot(Array(x,y).transpose, '@', Color.BLUE)
+  val parser = new scopt.OptionParser[Config]("LinearRegression.scala") {
+    head("NFATracker Linear Regression Analysis", "0.2")
 
-  // add constant to explanatory variables, and create model
-  val model = ols(x.map(Array(1, _)),y)
+    opt[String]('b', "baseDate").required.action( (x, c) =>
+      c.copy(baseDate = x) ).text("Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD")
 
-  // predict approval date
-  val date = Days.daysBetween(baseDate, DateTime.parse("2016-09-06").toLocalDate).getDays.toDouble
-  val prediction = model.predict(Array(1, date))
+    opt[String]('d', "date").required.action( (x, c) =>
+      c.copy(date = x) ).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
 
-  // add prediction and fit to plot
-  val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(date, prediction))
-  plot.canvas.point('@', Color.RED, date, prediction)
-  plot.canvas.line(line, Color.RED)
+    opt[String]('t', "nfa-item-type").required.action( (x, c) =>
+      c.copy(itemType = x) ).text("Type of NFA item on which to resrict data.")
 
-  // print prediction
-  val predictionDate = baseDate.plusDays(prediction.floor.toInt)
-  println(predictionDate)
+    opt[Unit]("plot-regression").hidden().action( (_, c) =>
+      c.copy(plot = true) ).text("Plot a linear regression of data normalized around BASEDATE.")
+
+    opt[Unit]('v', "verbose").action( (_, c) =>
+      c.copy(verbose = true) ).text("Print verbose information during execution.")
+
+    help("help").text("prints this usage text")
+  }
+
+  // parser.parse returns Option[C]
+  parser.parse(args, Config()) match {
+    case Some(config) =>
+      // filter data
+      val baseDate = DateTime.parse(config.baseDate).toLocalDate
+      val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(config.itemType)(baseDate)
+
+      // add constant to explanatory variables, and create model
+      val model = ols(x.map(Array(1, _)),y)
+      if (config.verbose) println(model)
+
+      // predict approval date
+      val date = Days.daysBetween(baseDate, DateTime.parse(config.date).toLocalDate).getDays.toDouble
+      val prediction = model.predict(Array(1, date))
+
+      // plot data, fit and prediction
+      if (config.plot) {
+        val plot = smile.plot.plot(Array(x, y).transpose, '@', Color.BLUE)
+        val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(date, prediction))
+        plot.canvas.point('@', Color.RED, date, prediction)
+        plot.canvas.line(line, Color.RED)
+      }
+
+      // print prediction
+      val predictionDate = baseDate.plusDays(prediction.floor.toInt)
+      println(predictionDate)
+    case None =>
+    // arguments are bad, error message will have been displayed
+  }
 }
