@@ -6,17 +6,41 @@ import com.univocity.parsers.common.processor.RowListProcessor
 import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import com.github.nscala_time.time.Imports._
-import org.joda.time.Days
+import org.joda.time.{Days, LocalDate}
 import smile.regression.Operators
 
-case class Config(baseDate: String = "", date: String = "", itemType: String = "", verbose: Boolean = false, plot: Boolean = false)
-
-object LinearRegression extends App with Operators {
+trait LinearRegression extends Operators {
 
   private val NFATRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
 
-  def generateData(url: String): (Array[String], List[Array[String]]) = {
+  def predict(baseDate: String, date: String, itemType: String, verbose: Boolean, plot: Boolean): Double =
+    predict(DateTime.parse(baseDate).toLocalDate, DateTime.parse(date).toLocalDate, itemType, verbose, plot)
+
+  def predict(baseDate: LocalDate, date: LocalDate, itemType: String, verbose: Boolean, plot: Boolean): Double = {
+    // filter data
+    val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(itemType)(baseDate)
+
+    // add constant to explanatory variables, and create model
+    val model = ols(x.map(Array(1, _)), y)
+    if (verbose) println(model)
+
+    // predict approval date
+    val dateDouble = Days.daysBetween(baseDate, date).getDays.toDouble
+    val prediction = model.predict(Array(1, dateDouble))
+
+    // plot data, fit and prediction
+    if (plot) {
+      val plot = smile.plot.plot(Array(x, y).transpose, '@', Color.BLUE)
+      val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(dateDouble, prediction))
+      plot.canvas.point('@', Color.RED, dateDouble, prediction)
+      plot.canvas.line(line, Color.RED)
+    }
+
+    prediction
+  }
+
+  private def generateData(url: String): (Array[String], List[Array[String]]) = {
     val reader = fromURL(url).reader()
 
     // The settings object provides many configuration options// The settings object provides many configuration options
@@ -46,7 +70,7 @@ object LinearRegression extends App with Operators {
     (rowProcessor.getHeaders, JavaConverters.asScalaBuffer(rowProcessor.getRows).toList)
   }
 
-  def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate): (Array[Double], Array[Double]) = {
+  private def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate): (Array[Double], Array[Double]) = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
     val includedRows =
       rows.map(row =>
@@ -78,59 +102,5 @@ object LinearRegression extends App with Operators {
     }, includedRows.map {
       _ (1)
     })
-  }
-
-  val parser = new scopt.OptionParser[Config]("LinearRegression") {
-    head("NFATracker Linear Regression Analysis", "0.2")
-
-    opt[String]('b', "baseDate").required.action((x, c) =>
-      c.copy(baseDate = x)).text("Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD")
-
-    opt[String]('d', "date").required.action((x, c) =>
-      c.copy(date = x)).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
-
-    opt[String]('t', "nfa-item-type").required.action((x, c) =>
-      c.copy(itemType = x)).text("Type of NFA item on which to resrict data.").
-      validate(x =>
-        if (List("Suppressor", "SBR", "SBS", "MG", "AOW").contains(x)) success
-        else failure("Option --nfa-item-type must be \"Suppressor\", \"SBR\", \"SBS\", \"MG\", or \"AOW\""))
-
-    opt[Unit]("plot-regression").hidden().action((_, c) =>
-      c.copy(plot = true)).text("Plot a linear regression of data normalized around BASEDATE.")
-
-    opt[Unit]('v', "verbose").action((_, c) =>
-      c.copy(verbose = true)).text("Print verbose information during execution.")
-
-    help("help").text("prints this usage text")
-  }
-
-  // parser.parse returns Option[C]
-  parser.parse(args, Config()) match {
-    case Some(config) =>
-      // filter data
-      val baseDate = DateTime.parse(config.baseDate).toLocalDate
-      val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(config.itemType)(baseDate)
-
-      // add constant to explanatory variables, and create model
-      val model = ols(x.map(Array(1, _)), y)
-      if (config.verbose) println(model)
-
-      // predict approval date
-      val date = Days.daysBetween(baseDate, DateTime.parse(config.date).toLocalDate).getDays.toDouble
-      val prediction = model.predict(Array(1, date))
-
-      // plot data, fit and prediction
-      if (config.plot) {
-        val plot = smile.plot.plot(Array(x, y).transpose, '@', Color.BLUE)
-        val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(date, prediction))
-        plot.canvas.point('@', Color.RED, date, prediction)
-        plot.canvas.line(line, Color.RED)
-      }
-
-      // print prediction
-      val predictionDate = baseDate.plusDays(prediction.floor.toInt)
-      println(predictionDate)
-    case None =>
-    // arguments are bad, error message will have been displayed
   }
 }
