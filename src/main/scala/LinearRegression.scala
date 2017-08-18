@@ -9,9 +9,9 @@ import com.github.nscala_time.time.Imports._
 import org.joda.time.Days
 import smile.regression.Operators
 
-case class Config(baseDate: String = "", date: String= "" , itemType: String= "", verbose: Boolean = false,  plot: Boolean = false)
+case class Config(baseDate: String = "", date: String = "", itemType: String = "", verbose: Boolean = false, plot: Boolean = false)
 
-object LinearRegression extends App with Operators{
+object LinearRegression extends App with Operators {
 
   private val NFATRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
@@ -49,53 +49,54 @@ object LinearRegression extends App with Operators{
   def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate): (Array[Double], Array[Double]) = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
     val includedRows =
-    rows.map(row =>
-    // filter unnecessary data
-      row.zipWithIndex.filter
-      {
-        case (_, i) => includedHeadersIdx.contains(i)
-      }.unzip._1.filter(_ != null)
-    // filter missing data, selected type, and Form 3's
-    ).filter(_.length > 3).filter(_.contains(nfaItemType)).filterNot(_.contains("Form 3 To Dealer"))
-    // filter unnecessary data once more
-    .map(row =>
-      row.zipWithIndex.filterNot
-      {
-        case (_, i) => i == 0 || i == 1
-      }.unzip._1
-    //convert dates to DateTime type, filter invalids
-    ).map(_.map(s => Try(DateTime.parse(s))).filter(_.isSuccess)
-    // convert dates to timestamp around given base date, filter dates before epoch
-    .map(d =>Days.daysBetween(baseDate, d.get.toLocalDate).getDays.toDouble).filter(_ > 0)).filter(_.length > 1)
-    // filter ridiculous outliers
-    .filterNot(e =>
-      {
+      rows.map(row =>
+        // filter unnecessary data
+        row.zipWithIndex.filter {
+          case (_, i) => includedHeadersIdx.contains(i)
+        }.unzip._1.filter(_ != null)
+        // filter missing data, selected type, and Form 3's
+      ).filter(_.length > 3).filter(_.contains(nfaItemType)).filterNot(_.contains("Form 3 To Dealer"))
+        // filter unnecessary data once more
+        .map(row =>
+        row.zipWithIndex.filterNot {
+          case (_, i) => i == 0 || i == 1
+        }.unzip._1
+        //convert dates to DateTime type, filter invalids
+      ).map(_.map(s => Try(DateTime.parse(s))).filter(_.isSuccess)
+        // convert dates to timestamp around given base date, filter dates before epoch
+        .map(d => Days.daysBetween(baseDate, d.get.toLocalDate).getDays.toDouble).filter(_ > 0)).filter(_.length > 1)
+        // filter ridiculous outliers
+        .filterNot(e => {
         e(1) - e(0) < 14 || e(1) - e(0) > 1000 // fewer than two weeks, or over 1000 days
       }
-    )
-    .toArray
+      )
+        .toArray
 
     // transpose result
-    (includedRows.map{_(0)}, includedRows.map{_(1)})
+    (includedRows.map {
+      _ (0)
+    }, includedRows.map {
+      _ (1)
+    })
   }
 
-  val parser = new scopt.OptionParser[Config]("LinearRegression.scala") {
+  val parser = new scopt.OptionParser[Config]("LinearRegression") {
     head("NFATracker Linear Regression Analysis", "0.2")
 
-    opt[String]('b', "baseDate").required.action( (x, c) =>
-      c.copy(baseDate = x) ).text("Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD")
+    opt[String]('b', "baseDate").required.action((x, c) =>
+      c.copy(baseDate = x)).text("Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD")
 
-    opt[String]('d', "date").required.action( (x, c) =>
-      c.copy(date = x) ).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
+    opt[String]('d', "date").required.action((x, c) =>
+      c.copy(date = x)).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
 
-    opt[String]('t', "nfa-item-type").required.action( (x, c) =>
-      c.copy(itemType = x) ).text("Type of NFA item on which to resrict data.")
+    opt[String]('t', "nfa-item-type").required.action((x, c) =>
+      c.copy(itemType = x)).text("Type of NFA item on which to resrict data.")
 
-    opt[Unit]("plot-regression").hidden().action( (_, c) =>
-      c.copy(plot = true) ).text("Plot a linear regression of data normalized around BASEDATE.")
+    opt[Unit]("plot-regression").hidden().action((_, c) =>
+      c.copy(plot = true)).text("Plot a linear regression of data normalized around BASEDATE.")
 
-    opt[Unit]('v', "verbose").action( (_, c) =>
-      c.copy(verbose = true) ).text("Print verbose information during execution.")
+    opt[Unit]('v', "verbose").action((_, c) =>
+      c.copy(verbose = true)).text("Print verbose information during execution.")
 
     help("help").text("prints this usage text")
   }
@@ -108,7 +109,7 @@ object LinearRegression extends App with Operators{
       val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(config.itemType)(baseDate)
 
       // add constant to explanatory variables, and create model
-      val model = ols(x.map(Array(1, _)),y)
+      val model = ols(x.map(Array(1, _)), y)
       if (config.verbose) println(model)
 
       // predict approval date
