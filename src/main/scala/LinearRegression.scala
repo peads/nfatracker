@@ -90,7 +90,10 @@ object LinearRegression extends App with Operators {
       c.copy(date = x)).text("Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD")
 
     opt[String]('t', "nfa-item-type").required.action((x, c) =>
-      c.copy(itemType = x)).text("Type of NFA item on which to resrict data.")
+      c.copy(itemType = x)).text("Type of NFA item on which to resrict data.").
+      validate(x =>
+        if (List("Suppressor", "SBR", "SBS", "MG", "AOW").contains(x)) success
+        else failure("Option --nfa-item-type must be \"Suppressor\", \"SBR\", \"SBS\", \"MG\", or \"AOW\""))
 
     opt[Unit]("plot-regression").hidden().action((_, c) =>
       c.copy(plot = true)).text("Plot a linear regression of data normalized around BASEDATE.")
