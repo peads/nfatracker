@@ -5,7 +5,7 @@ case class Config(baseDate: String = "", date: String = "", itemType: String = "
 
 object Main extends App with LinearRegression {
 
-  val parser = new scopt.OptionParser[Config]("LinearRegression") {
+  val parser = new scopt.OptionParser[Config]("sbt \"run -b <date> -d <date> -t <type>\"") {
     head("NFATracker Linear Regression Analysis", "0.2")
 
     opt[String]('b', "baseDate").required.action((x, c) =>
@@ -22,7 +22,7 @@ object Main extends App with LinearRegression {
         if (List("Suppressor", "SBR", "SBS", "MG", "AOW").contains(x)) success
         else failure("Option --nfa-item-type must be \"Suppressor\", \"SBR\", \"SBS\", \"MG\", or \"AOW\""))
 
-    opt[Unit]("plot-regression").hidden().action((_, c) =>
+    opt[Unit]("plot-regression").action((_, c) =>
       c.copy(plot = true)).text("Plot a linear regression of data normalized around BASEDATE.")
 
     opt[Unit]('v', "verbose").action((_, c) =>
