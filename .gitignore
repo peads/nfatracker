@@ -1,4 +1,7 @@
 project/
 target/
 .idea/
-
+logs/
+public/
+sbt
+sbt-dist/

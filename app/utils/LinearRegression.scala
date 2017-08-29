@@ -14,6 +14,8 @@ trait LinearRegression extends Operators {
   private val NFATRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
 
+  val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
+
   def predict(baseDate: String, date: String, itemType: String, verbose: Boolean, plot: Boolean): Double =
     predict(DateTime.parse(baseDate).toLocalDate, DateTime.parse(date).toLocalDate, itemType, verbose, plot)
 

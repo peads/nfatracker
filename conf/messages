@@ -1,0 +1,4 @@
+field.NFAItem = NFAItem
+field.FormType = FormType
+field.Approved = Approved
+field.CheckCashed = CheckCashed

@@ -1,0 +1,31 @@
+@(rows: Seq[Row])(implicit request: RequestHeader, messages:
+    Messages)
+
+@main("Welcome to Play") {
+
+    <div class="container-fluid tablestyle shadowed">
+        <div class="row">
+            <div class="col-sm-2 header">@Messages("field.NFAItem")</div>
+            <div class="col-sm-2 header">@Messages("field.FormType")</div>
+            <div class="col-sm-2 header">@Messages("field.CheckCashed")</div>
+            <div class="col-sm-2 header">@Messages("field.Approved")</div>
+        </div>
+
+        @rows.map { r =>
+            <div id="requestrow" class="row bx">
+                <div class="col-sm-2">
+                @r.nfaItem
+                </div>
+                <div class="col-sm-2">
+                @r.formType
+                </div>
+                <div class="col-sm-2">
+                @r.checkCashedDate
+                </div>
+                <div class="col-sm-2">
+                @r.approvedDate
+                </div>
+            </div>
+        }
+    </div>
+}
