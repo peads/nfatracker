@@ -6,40 +6,11 @@ import scala.collection.JavaConverters
 import com.univocity.parsers.common.processor.RowListProcessor
 import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
-import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 
 object NfaTrackerDataUpdater {
 
   private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
-
-//  val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
-
-//  def predict(baseDate: String, date: String, itemType: String, verbose: Boolean, plot: Boolean): Double =
-//    predict(DateTime.parse(baseDate).toLocalDate, DateTime.parse(date).toLocalDate, itemType, verbose, plot)
-//
-//  def predict(baseDate: LocalDate, date: LocalDate, itemType: String, verbose: Boolean, plot: Boolean): Double = {
-//    // filter data
-//    val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(itemType)(baseDate)
-//
-//    // add constant to explanatory variables, and create model
-//    val model = ols(x.map(Array(1, _)), y)
-//    if (verbose) println(model)
-//
-//    // predict approval date
-//    val dateDouble = Days.daysBetween(baseDate, date).getDays.toDouble
-//    val prediction = model.predict(Array(1, dateDouble))
-//
-//    // plot data, fit and prediction
-//    if (plot) {
-//      val plot = smile.plot.plot(Array(x, y).transpose, '@', Color.BLUE)
-//      val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(dateDouble, prediction))
-//      plot.canvas.point('@', Color.RED, dateDouble, prediction)
-//      plot.canvas.line(line, Color.RED)
-//    }
-//
-//    prediction
-//  }
 
   def generateData(url: String): (Array[String], List[Array[String]]) = {
     val reader = fromURL(url).reader()

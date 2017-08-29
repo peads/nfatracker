@@ -26,7 +26,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   import profile.api._
   import org.joda.time.{Days, LocalDate}
 
-  private val EPOCH = new LocalDate(1970, 1, 1)
+  val EPOCH = new LocalDate(1970, 1, 1)
 
   //Set to Epoch time
 
