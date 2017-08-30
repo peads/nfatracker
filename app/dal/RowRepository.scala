@@ -26,15 +26,11 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   import profile.api._
   import org.joda.time.{Days, LocalDate}
 
-  val EPOCH = new LocalDate(1970, 1, 1)
-
-  //Set to Epoch time
-
   /**
    * Here we define the table. It will have "NFAItem", "FormType",
     * "Approved", "CheckCashed" columns.
    */
-  private class PeopleTable(tag: Tag) extends Table[Row](tag, "rows") {
+  private class RowTable(tag: Tag) extends Table[Row](tag, "rows") {
 
     /** The ID column, which is the primary key, and auto incremented */
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -66,7 +62,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   /**
    * The starting point for all queries on the people table.
    */
-  private val rows = TableQuery[PeopleTable]
+  private val rows = TableQuery[RowTable]
 
   /**
    * Create a row with the given attributes.
@@ -84,8 +80,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
       // returned id
       into ((row, id) => Row(id, row._1, row._2, row._3, row._4))
     // And finally, insert the Row into the database
-    ) += (nfaItem, formType, Days.daysBetween(EPOCH, checkCashedDate.toLocalDate).getDays
-      .toLong, Days.daysBetween(EPOCH, approvedDate.toLocalDate).getDays.toLong)
+    ) += (nfaItem, formType, checkCashedDate.getMillis, approvedDate.getMillis)
   }
 
   /**

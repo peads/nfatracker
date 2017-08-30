@@ -51,7 +51,7 @@ object NfaTrackerDataUpdater {
       row.zipWithIndex.filter {
         case (_, i) => includedHeadersIdx.contains(i)
       }.unzip._1.filter(_ != null)
-      // filter missing data, selected type, and Form 3's
+      // filter missing data, and Form 3's
     ).filter(_.length > 3).filterNot(_.contains("Form 3 To Dealer"))
     .map(row =>
       row.zipWithIndex.map{
