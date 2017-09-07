@@ -1,4 +1,6 @@
 @import views.html.helper.CSRF
+@import views.html.helper.select
+@import views.html.helper.options
 @(prediction: String)(implicit request: RequestHeader, messages:
     Messages)
 
@@ -18,7 +20,12 @@
                 <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
                 size="10" name="checkCashed"/>
             </div>
-            <div class="'col-md-5">
+            <div class='col-md-3'>
+                <select id="nfaItemType" name="type">
+                    <option>-- Select an NFA Item Type --</option>
+                </select>
+            </div>
+            <div class="'col-md-3">
                 <button type="submit" class="btn btn-success">
                     Submit <span class="fa fa-arrow-right"></span></button>
             </div>

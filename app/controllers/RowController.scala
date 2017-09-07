@@ -1,26 +1,23 @@
 package controllers
 
 import javax.inject._
-import play.api.data._
-import play.api.data.Forms._
+
 import dal._
-import org.h2.engine.User
-import org.joda.time.{DateTime, Days, LocalDate}
+import org.joda.time.{DateTime, Days}
 import play.api.i18n._
 import play.api.libs.json.Json
 import play.api.mvc._
-import utils.NfaTrackerDataUpdater
+import utils.{NfaTrackerDataUpdater, UpdateAction}
 import smile.regression._
 
 import scala.concurrent.{Await, ExecutionContext}
 
-class RowController @Inject()(repo: RowRepository,
-                                  cc: ControllerComponents
-                                )(implicit ec: ExecutionContext)
-  extends AbstractController(cc) with I18nSupport {
+class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
+                              cc: ControllerComponents)
+                    (implicit ec: ExecutionContext) extends AbstractController(cc)
+                    with I18nSupport {
 
-  private val NFA_TRACKER_URL = "http://www.nfatracker" +
-    ".com/wp-content/themes/smartsolutions/inc/export/"
+  private val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   private val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
   /**
@@ -32,9 +29,8 @@ class RowController @Inject()(repo: RowRepository,
 
   /**
     * Update database with new transfers from NFATracker.
-    * TODO: Make it so this is only accessible from localhost.
     */
-  def updateRows = Action { implicit request =>
+  def updateRows = updateAction { implicit request =>
     (NfaTrackerDataUpdater.filterData _).tupled(NfaTrackerDataUpdater.generateData
     (NFA_TRACKER_URL)).foreach((repo.create _).tupled(_))
     Redirect(routes.RowController.index)
@@ -56,8 +52,7 @@ class RowController @Inject()(repo: RowRepository,
   private def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  private def predict(baseDate: DateTime, date: DateTime, nfaType:
-  String = "Suppressor"): String = {
+  private def predict(baseDate: DateTime, date: DateTime, nfaType: String): String = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
     val dbResult = Await.result(repo.list(), scala.concurrent.duration.Duration
@@ -78,11 +73,12 @@ class RowController @Inject()(repo: RowRepository,
     baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
   }
   def handleDateSubmit = Action { implicit request => {
-      val checkCashedString = request.body.asFormUrlEncoded
-        .get("checkCashed").mkString
-      val baseDateString = request.body.asFormUrlEncoded.get("base").mkString
+      val body = request.body.asFormUrlEncoded
+      val checkCashedString = body.get("checkCashed").mkString
+      val baseDateString = body.get("base").mkString
+      val nfaItemType = body.get("type").mkString
       Ok(views.html.index(predict(DateTime.parse(baseDateString), DateTime
-        .parse(checkCashedString))))
+        .parse(checkCashedString), nfaItemType)))
     }
   }
   def index = Action { implicit request =>

@@ -8,4 +8,9 @@ $(function () {
         minViewMode: 'days',
         maxViewMode: 'years',
     });
+
+    $.each(["Suppressor", "SBR", "SBS", "MG", "AOW"], function(i, p) {
+        $('#nfaItemType').append($('<option></option>').val(p).html(p));
+    });
 });
+
