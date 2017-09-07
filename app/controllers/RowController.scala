@@ -4,6 +4,7 @@ import javax.inject._
 
 import dal._
 import org.joda.time.{DateTime, Days}
+import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -33,9 +34,16 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     * Update database with new transfers from NFATracker.
     */
   def updateRows = updateAction { implicit request =>
+    val initialTableSize = Await.result(repo.length(), DURATION)
+
     (NfaTrackerDataUpdater.filterData _).tupled(NfaTrackerDataUpdater.generateData
-    (NFA_TRACKER_URL)).drop(Await.result(repo.length(), DURATION)).foreach((repo
-      .create _).tupled(_))
+    (NFA_TRACKER_URL)).drop(initialTableSize).foreach((repo.create _).tupled(_))
+
+    val finalTableSize = Await.result(repo.length(), DURATION)
+    val updateSize = finalTableSize - initialTableSize
+
+    Logger.info(s"Database updated with $updateSize new entries.")
+
     Redirect(routes.RowController.index)
   }
 

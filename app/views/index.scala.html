@@ -1,6 +1,4 @@
 @import views.html.helper.CSRF
-@import views.html.helper.select
-@import views.html.helper.options
 @(prediction: String)(implicit request: RequestHeader, messages:
     Messages)
 
@@ -11,17 +9,17 @@
     <form action="@{CSRF(routes.RowController.handleDateSubmit())}" method="POST">
         <div class="container">
             <div class='col-md-3'>
-                <label>Earliest Date Filter: </label>
+                <label for="baseDatePicker">Earliest Date Filter: </label>
                 <input type="text" class="ui-datepicker" id="baseDatePicker"
                 size="10" name="base" />
             </div>
             <div class='col-md-3'>
-                <label>Check Cashed: </label>
+                <label for="checkCashedDatePicker">Check Cashed: </label>
                 <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
                 size="10" name="checkCashed"/>
             </div>
             <div class='col-md-3'>
-                <select id="nfaItemType" name="type">
+                <select title="NFA Item Selector" id="nfaItemType" name="type">
                     <option>-- Select an NFA Item Type --</option>
                 </select>
             </div>
