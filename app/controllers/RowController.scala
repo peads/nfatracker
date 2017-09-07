@@ -17,11 +17,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
                     (implicit ec: ExecutionContext) extends AbstractController(cc)
                     with I18nSupport {
 
+  private val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
+    .duration.SECONDS)
   private val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   private val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
   /**
-   * The index action.
+   * The list action.
    */
   def list = Action.async { implicit request =>
     repo.list().map(req => Ok(views.html.list(req)))
@@ -32,7 +34,8 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     */
   def updateRows = updateAction { implicit request =>
     (NfaTrackerDataUpdater.filterData _).tupled(NfaTrackerDataUpdater.generateData
-    (NFA_TRACKER_URL)).foreach((repo.create _).tupled(_))
+    (NFA_TRACKER_URL)).drop(Await.result(repo.length(), DURATION)).foreach((repo
+      .create _).tupled(_))
     Redirect(routes.RowController.index)
   }
 
@@ -55,8 +58,8 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   private def predict(baseDate: DateTime, date: DateTime, nfaType: String): String = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
-    val dbResult = Await.result(repo.list(), scala.concurrent.duration.Duration
-    (30, scala.concurrent.duration.SECONDS)).filter(_.nfaItem.contains(nfaType))
+    val dbResult = Await.result(repo.list(), DURATION).filter(_.nfaItem.contains
+    (nfaType))
       .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
         .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
         .approvedDate))))
@@ -72,6 +75,9 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
 
     baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
   }
+  /**
+    * The submit action.
+    */
   def handleDateSubmit = Action { implicit request => {
       val body = request.body.asFormUrlEncoded
       val checkCashedString = body.get("checkCashed").mkString
@@ -81,6 +87,9 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
         .parse(checkCashedString), nfaItemType)))
     }
   }
+  /**
+    * The index action.
+    */
   def index = Action { implicit request =>
     Ok(views.html.index(""))
   }

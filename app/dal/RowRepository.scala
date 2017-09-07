@@ -60,7 +60,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   }
 
   /**
-   * The starting point for all queries on the people table.
+   * The starting point for all queries on the rows table.
    */
   private val rows = TableQuery[RowTable]
 
@@ -88,5 +88,12 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
    */
   def list(): Future[Seq[Row]] = db.run {
     rows.result
+  }
+
+  /**
+    * Number of entries in the rows table.
+    */
+  def length(): Future[Int] = db.run {
+    rows.length.result
   }
 }
