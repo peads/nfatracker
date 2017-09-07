@@ -1,7 +1,27 @@
+@import views.html.helper.CSRF
 @(prediction: String)(implicit request: RequestHeader, messages:
     Messages)
 
 @main("NFATracker Analysis") {
 
     @prediction
+
+    <form action="@{CSRF(routes.RowController.handleDateSubmit())}" method="POST">
+        <div class="container">
+            <div class='col-md-3'>
+                <label>Earliest Date Filter: </label>
+                <input type="text" class="ui-datepicker" id="baseDatePicker"
+                size="10" name="base" />
+            </div>
+            <div class='col-md-3'>
+                <label>Check Cashed: </label>
+                <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
+                size="10" name="checkCashed"/>
+            </div>
+            <div class="'col-md-5">
+                <button type="submit" class="btn btn-success">
+                    Submit <span class="fa fa-arrow-right"></span></button>
+            </div>
+        </div>
+    </form>
 }

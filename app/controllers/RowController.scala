@@ -1,9 +1,10 @@
 package controllers
 
-import java.awt.Color
 import javax.inject._
-
+import play.api.data._
+import play.api.data.Forms._
 import dal._
+import org.h2.engine.User
 import org.joda.time.{DateTime, Days, LocalDate}
 import play.api.i18n._
 import play.api.libs.json.Json
@@ -55,20 +56,17 @@ class RowController @Inject()(repo: RowRepository,
   private def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  def index = Action { implicit request =>
-
-    val baseDate = DateTime.parse("2016-01-01")
-    val date = DateTime.parse("2016-09-06")
-    val nfaType = "Suppressor"
+  private def predict(baseDate: DateTime, date: DateTime, nfaType:
+  String = "Suppressor"): String = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
     val dbResult = Await.result(repo.list(), scala.concurrent.duration.Duration
     (30, scala.concurrent.duration.SECONDS)).filter(_.nfaItem.contains(nfaType))
-    .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
-      .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
-      .approvedDate))))
-    .filter{ case (c, a) => outOfRangeFilter(c,a)}
-    .toArray
+      .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
+        .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
+        .approvedDate))))
+      .filter{ case (c, a) => outOfRangeFilter(c,a)}
+      .toArray
 
     val (x, y) = dbResult.unzip
 
@@ -76,9 +74,18 @@ class RowController @Inject()(repo: RowRepository,
     val model = ols(x.map(Array(1, _)),y)
 
     val prediction = model.predict(Array(1, dateDouble))
-    val predictionDate = baseDate.toLocalDate.plusDays(prediction.floor.toInt)
 
-
-    Ok(views.html.index(predictionDate.toString()))//predictionDate.toString))
+    baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
+  }
+  def handleDateSubmit = Action { implicit request => {
+      val checkCashedString = request.body.asFormUrlEncoded
+        .get("checkCashed").mkString
+      val baseDateString = request.body.asFormUrlEncoded.get("base").mkString
+      Ok(views.html.index(predict(DateTime.parse(baseDateString), DateTime
+        .parse(checkCashedString))))
+    }
+  }
+  def index = Action { implicit request =>
+    Ok(views.html.index(""))
   }
 }
