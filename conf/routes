@@ -4,7 +4,8 @@
 
 # Home page
 GET     /                           controllers.RowController.index
-POST     /                           controllers.RowController.handleDateSubmit
+POST    /                           controllers.RowController.handleDateSubmit
+GET     /after/:date                     controllers.RowController.handleJsonAfterDate(date: String)
 GET     /list                       controllers.RowController.list
 GET     /update                     controllers.RowController.updateRows
 GET     /json                       controllers.RowController.getJson

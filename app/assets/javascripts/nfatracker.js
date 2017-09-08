@@ -12,18 +12,5 @@ $(function () {
     $.each(["Suppressor", "SBR", "SBS", "MG", "AOW"], function(i, p) {
         $('#nfaItemType').append($('<option></option>').val(p).html(p));
     });
-
-    // $("#placeholder").css("height", "500px");
-
-    var data = [];
-    $.getJSON("/json", function(rows){
-        $.each(rows, function (id, row) {
-            data.push([row.checkCashedDate, row.approvedDate]);
-        });
-        $.plot("#placeholder", [{
-            data: data,
-            points: { show: true }
-        }]);
-    });
 });
 

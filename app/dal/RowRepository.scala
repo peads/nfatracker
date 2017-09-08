@@ -96,4 +96,10 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   def length(): Future[Int] = db.run {
     rows.length.result
   }
+
+  def listAfterDate(date: String): Future[Seq[Row]] = db.run {
+    val limit = DateTime.parse(date).getMillis
+    ( for( c <- rows; if c.approvedDate >= limit && c.checkCashedDate >= limit)
+      yield c ).result
+  }
 }

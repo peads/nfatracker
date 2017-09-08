@@ -1,8 +1,9 @@
 package controllers
 
 import javax.inject._
+
 import dal.RowRepository
-import org.joda.time.{DateTime, Days}
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
@@ -49,6 +50,15 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     }
   }
 
+  /**
+    * A REST endpoint
+    */
+  def handleJsonAfterDate(date: String) = Action.async  { implicit request => {
+      repo.listAfterDate(date).map { rows =>
+        Ok(Json.toJson(rows))
+      }
+    }
+  }
   /**
     * Partially applied function allowing mixin to access injected database
     * reference.

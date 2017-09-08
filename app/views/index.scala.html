@@ -29,4 +29,19 @@
             </div>
         </div>
     </form>
+    <script>
+
+            $('#baseDatePicker').change(function() {
+                var data = [];
+                $.getJSON("/after/" + $('#baseDatePicker').val(), function(rows){
+                    $.each(rows, function (id, row) {
+                        data.push([row.checkCashedDate, row.approvedDate]);
+                    });
+                    $.plot("#placeholder", [{
+                        data: data,
+                        points: { show: true }
+                    }]);
+                });
+            });
+    </script>
 }
