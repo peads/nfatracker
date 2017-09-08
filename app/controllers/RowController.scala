@@ -1,7 +1,7 @@
 package controllers
 
 import javax.inject._
-import dal._
+import dal.RowRepository
 import org.joda.time.{DateTime, Days}
 import play.api.Logger
 import play.api.i18n._
@@ -24,7 +24,7 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
 
   /**
     * Update database with new transfers from NFATracker.
-    * Uses custom UpdateAction as ACL only allowing localhost to access.
+    * Uses custom UpdateAction as ACL only allowing localhost access.
     */
   def updateRows = updateAction { implicit request =>
     val initialTableSize = Await.result(repo.length(), DURATION)
@@ -44,8 +44,8 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
    * A REST endpoint that gets all the transfers as JSON.
    */
   def getJson = Action.async { implicit request =>
-    repo.list().map { people =>
-      Ok(Json.toJson(people))
+    repo.list().map { rows =>
+      Ok(Json.toJson(rows))
     }
   }
 
