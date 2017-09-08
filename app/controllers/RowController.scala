@@ -1,28 +1,20 @@
 package controllers
 
 import javax.inject._
-
 import dal._
 import org.joda.time.{DateTime, Days}
 import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
 import play.api.mvc._
-import utils.{NfaTrackerDataUpdater, UpdateAction}
-import smile.regression._
+import utils.{LinearRegression, UpdateAction}
 
 import scala.concurrent.{Await, ExecutionContext}
 
 class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
                               cc: ControllerComponents)
                     (implicit ec: ExecutionContext) extends AbstractController(cc)
-                    with I18nSupport {
-
-  private val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
-    .duration.SECONDS)
-  private val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
-  private val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
-
+                    with I18nSupport with LinearRegression {
   /**
    * The list action.
    */
@@ -32,11 +24,12 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
 
   /**
     * Update database with new transfers from NFATracker.
+    * Uses custom UpdateAction as ACL only allowing localhost to access.
     */
   def updateRows = updateAction { implicit request =>
     val initialTableSize = Await.result(repo.length(), DURATION)
 
-    (NfaTrackerDataUpdater.filterData _).tupled(NfaTrackerDataUpdater.generateData
+    (filterData _).tupled(generateData
     (NFA_TRACKER_URL)).drop(initialTableSize).foreach((repo.create _).tupled(_))
 
     val finalTableSize = Await.result(repo.length(), DURATION)
@@ -55,34 +48,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
       Ok(Json.toJson(people))
     }
   }
-  private def outOfRangeFilter(checkCashedDate: Double, approvedDate: Double)
-  : Boolean = {
-    val timeDiff = approvedDate - checkCashedDate
-    approvedDate > 0 && checkCashedDate > 0 && timeDiff >= 14 && timeDiff < 1000
-  }
-  private def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
-    Days.daysBetween(baseDate, date).getDays.toDouble
 
-  private def predict(baseDate: DateTime, date: DateTime, nfaType: String): String = {
-    val dateDouble = normalizedTimeStamp(baseDate, date)
-
-    val dbResult = Await.result(repo.list(), DURATION).filter(_.nfaItem.contains
-    (nfaType))
-      .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
-        .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
-        .approvedDate))))
-      .filter{ case (c, a) => outOfRangeFilter(c,a)}
-      .toArray
-
-    val (x, y) = dbResult.unzip
-
-    // add constant to explanatory variables, and create model
-    val model = ols(x.map(Array(1, _)),y)
-
-    val prediction = model.predict(Array(1, dateDouble))
-
-    baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
-  }
+  /**
+    * Partially applied function allowing mixin to access injected database
+    * reference.
+    */
+  private val predict: (DateTime, DateTime, String) => String = predict(repo)(_:
+    DateTime, _: DateTime, _: String)
   /**
     * The submit action.
     */

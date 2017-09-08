@@ -6,13 +6,50 @@ import scala.collection.JavaConverters
 import com.univocity.parsers.common.processor.RowListProcessor
 import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
-import org.joda.time.DateTime
+import dal.RowRepository
+import org.joda.time.{DateTime, Days}
+import smile.regression.ols
+import scala.concurrent.Await
 
-object NfaTrackerDataUpdater {
+trait LinearRegression {
 
-  private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
+  protected val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
+  protected val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
+  protected val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
+    .duration.SECONDS)
+  // protected val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
-  def generateData(url: String): (Array[String], List[Array[String]]) = {
+  protected def outOfRangeFilter(checkCashedDate: Double, approvedDate: Double)
+  : Boolean = {
+    val timeDiff = approvedDate - checkCashedDate
+    approvedDate > 0 && checkCashedDate > 0 && timeDiff >= 14 && timeDiff < 1000
+  }
+  protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
+    Days.daysBetween(baseDate, date).getDays.toDouble
+
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: String): String = {
+    val dateDouble = normalizedTimeStamp(baseDate, date)
+
+    val dbResult = Await.result(repo.list(), DURATION).filter(_.nfaItem.contains
+    (nfaType))
+      .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
+        .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
+        .approvedDate))))
+      .filter{ case (c, a) => outOfRangeFilter(c,a)}
+      .toArray
+
+    val (x, y) = dbResult.unzip
+
+    // add constant to explanatory variables, and create model
+    val model = ols(x.map(Array(1, _)),y)
+
+    val prediction = model.predict(Array(1, dateDouble))
+
+    baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
+  }
+
+  protected def generateData(url: String): (Array[String],
+    List[Array[String]]) = {
     val reader = fromURL(url).reader()
 
     // The settings object provides many configuration options// The settings object provides many configuration options
@@ -43,7 +80,7 @@ object NfaTrackerDataUpdater {
     (rowProcessor.getHeaders, JavaConverters.asScalaBuffer(rowProcessor.getRows).toList)
   }
 
-  def filterData(headers: Array[String], rows: List[Array[String]]):List[
+  protected def filterData(headers: Array[String], rows: List[Array[String]]):List[
     (String, String, DateTime, DateTime)] = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
     rows.map(row =>
