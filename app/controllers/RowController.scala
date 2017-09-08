@@ -51,10 +51,10 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   }
 
   /**
-    * A REST endpoint
+    * A REST endpoint that gets all the filtered transfers as JSON.
     */
-  def handleJsonAfterDate(date: String) = Action.async  { implicit request => {
-      repo.listAfterDate(date).map { rows =>
+  def getFilteredJson(date: String, nfaType: String) = Action.async  { implicit request => {
+      repo.listWithFilters(date, nfaType).map { rows =>
         Ok(Json.toJson(rows))
       }
     }

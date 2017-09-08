@@ -97,9 +97,23 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
     rows.length.result
   }
 
-  def listAfterDate(date: String): Future[Seq[Row]] = db.run {
+  private def filterWithoutItem(date: Long, item: String)
+                               (approved: Rep[Long], cashed: Rep[Long],
+                                nfaItem: Rep[String]) : Rep[Boolean] =
+    approved >= date && cashed >= date
+  private def filterWithItem(date: Long, item: String)
+                            (approved: Rep[Long], cashed: Rep[Long],
+                             nfaItem: Rep[String]) : Rep[Boolean] =
+    filterWithoutItem(date, item)(approved, cashed, nfaItem) && nfaItem === item
+
+  def listWithFilters(date: String, nfaItem: String): Future[Seq[Row]] = db.run {
     val limit = DateTime.parse(date).getMillis
-    ( for( c <- rows; if c.approvedDate >= limit && c.checkCashedDate >= limit)
-      yield c ).result
+    val filter =
+      if (nfaItem != "none")
+        filterWithItem(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
+      else
+        filterWithoutItem(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
+
+    ( for( c <- rows; if filter(c.approvedDate, c.checkCashedDate, c.nfaItem)) yield c ).result
   }
 }
