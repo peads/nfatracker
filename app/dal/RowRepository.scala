@@ -97,23 +97,17 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
     rows.length.result
   }
 
-  private def filterWithoutItem(date: Long, item: String)
-                               (approved: Rep[Long], cashed: Rep[Long],
-                                nfaItem: Rep[String]) : Rep[Boolean] =
-    approved >= date && cashed >= date
-  private def filterWithItem(date: Long, item: String)
+  private def filter(date: Long, item: Option[String])
                             (approved: Rep[Long], cashed: Rep[Long],
-                             nfaItem: Rep[String]) : Rep[Boolean] =
-    filterWithoutItem(date, item)(approved, cashed, nfaItem) && nfaItem === item
-
-  def listWithFilters(date: String, nfaItem: String): Future[Seq[Row]] = db.run {
-    val limit = DateTime.parse(date).getMillis
-    val filter =
-      if (nfaItem != "none")
-        filterWithItem(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
-      else
-        filterWithoutItem(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
-
-    ( for( c <- rows; if filter(c.approvedDate, c.checkCashedDate, c.nfaItem)) yield c ).result
+                             nfaItem: Rep[String]) : Rep[Boolean] = {
+    val isWithinDateRange = approved >= date && cashed >= date
+    item match {
+      case Some(i) => isWithinDateRange && nfaItem === i
+      case None => isWithinDateRange
+    }
+  }
+  def listWithFilters(baseDate: String, nfaItem: Option[String]): Future[Seq[Row]] = db.run {
+    val limit = DateTime.parse(baseDate).getMillis
+    ( for( c <- rows; if filter(limit, nfaItem)(c.approvedDate, c.checkCashedDate, c.nfaItem)) yield c ).result
   }
 }

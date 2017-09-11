@@ -53,12 +53,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   /**
     * A REST endpoint that gets all the filtered transfers as JSON.
     */
-  def getFilteredJson(date: String, nfaType: String) = Action.async  { implicit request => {
-      repo.listWithFilters(date, nfaType).map { rows =>
+  def getFilteredJson(baseDate: String, nfaType: String) = Action.async  { implicit request => {
+      repo.listWithFilters(baseDate, Option(nfaType)).map { rows =>
         Ok(Json.toJson(rows))
       }
     }
   }
+
   /**
     * Partially applied function allowing mixin to access injected database
     * reference.
