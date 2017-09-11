@@ -24,7 +24,6 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   // The second one brings the Slick DSL into scope, which lets you define the table and other queries.
   import dbConfig._
   import profile.api._
-  import org.joda.time.{Days, LocalDate}
 
   /**
    * Here we define the table. It will have "NFAItem", "FormType",
@@ -63,6 +62,25 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
    * The starting point for all queries on the rows table.
    */
   private val rows = TableQuery[RowTable]
+  private val MAX_DAYS: Long = (8.64 * Math.pow(10, 10)).asInstanceOf[Long]
+  /**
+    * Curried filter function.
+    * @param date Date after which the data is filtered.
+    * @param item Item type on which to filter. Can be left unspecified.
+    * @param approved Row approved date.
+    * @param cashed Row check cashed date.
+    * @param nfaItem Row item type.
+    * @return If a row should be included.
+    */
+  private def filter(date: Long, item: Option[String])
+                    (approved: Rep[Long], cashed: Rep[Long],
+                     nfaItem: Rep[String]) : Rep[Boolean] = {
+    val isWithinDateRange = approved >= date && cashed >= date && (approved - cashed) < MAX_DAYS
+    item match {
+      case Some(i) => isWithinDateRange && nfaItem === i
+      case None => isWithinDateRange
+    }
+  }
 
   /**
    * Create a row with the given attributes.
@@ -95,5 +113,19 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
     */
   def length(): Future[Int] = db.run {
     rows.length.result
+  }
+
+  /**
+    * Lists all the rows that match the given criteria.
+    * @param baseDate Date after which the data is filtered.
+    * @param nfaItem Item type on which to filter.
+    * @return Rows given filter applied.
+    */
+  def listWithFilters(baseDate: String, nfaItem: Option[String]): Future[Seq[Row]] = db.run {
+    val limit = DateTime.parse(baseDate).getMillis
+    val isGraphed : (Rep[Long], Rep[Long], Rep[String]) => Rep[Boolean] // partially applied filter function
+      = filter(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
+
+    ( for( c <- rows; if isGraphed(c.approvedDate, c.checkCashedDate, c.nfaItem)) yield c ).result
   }
 }

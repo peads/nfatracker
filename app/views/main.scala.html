@@ -5,14 +5,15 @@
 <html>
     <head>
         <title>@title</title>
-        <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")"/>
         <script src="@routes.Assets.versioned("lib/jquery/jquery.js")" crossorigin="anonymous"></script>
         <script src="@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")" crossorigin="anonymous"></script>
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("lib/bootstrap/css/bootstrap.min.css")">
         <script src="@routes.Assets.versioned("lib/bootstrap-datepicker/js/bootstrap-datepicker.min.js")" crossorigin="anonymous"></script>
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("lib/bootstrap-datepicker/css/bootstrap-datepicker.css")">
+        <script type='text/javascript' src='@routes.Assets.versioned("lib/flot/jquery.flot.js")'></script>
         <script type="text/javascript" src='@routes.Assets.versioned("javascripts/nfatracker.js")'></script>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/nfatracker.css")">
     </head>
     <body>
         @content
