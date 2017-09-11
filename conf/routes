@@ -3,10 +3,14 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.PersonController.index
-#POST    /person                     controllers.PersonController.addPerson
-GET     /update                     controllers.PersonController.updateRows
-GET     /persons                    controllers.PersonController.getPersons
+GET     /                           controllers.RowController.index
+GET     /predict/:date/:baseDate/   controllers.RowController.getPrediction(date: String, baseDate: String, nfaType: String = null)
+GET     /predict/:date/:baseDate/:nfaType  controllers.RowController.getPrediction(date: String, baseDate: String, nfaType: String)
+GET     /data/:baseDate/            controllers.RowController.getFilteredJson(baseDate: String, nfaType: String = null)
+GET     /data/:baseDate/:nfaType    controllers.RowController.getFilteredJson(baseDate: String, nfaType: String)
+GET     /list                       controllers.RowController.list
+GET     /update                     controllers.RowController.updateRows
+GET     /json                       controllers.RowController.getJson
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

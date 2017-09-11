@@ -1,31 +1,74 @@
-@(rows: Seq[Row])(implicit request: RequestHeader, messages:
+@import views.html.helper.CSRF
+@(prediction: String)(implicit request: RequestHeader, messages:
     Messages)
 
-@main("Welcome to Play") {
+@main("NFATracker Analysis") {
 
-    <div class="container-fluid tablestyle shadowed">
-        <div class="row">
-            <div class="col-sm-2 header">@Messages("field.NFAItem")</div>
-            <div class="col-sm-2 header">@Messages("field.FormType")</div>
-            <div class="col-sm-2 header">@Messages("field.CheckCashed")</div>
-            <div class="col-sm-2 header">@Messages("field.Approved")</div>
+    <div id="placeholder"></div>
+
+   <div class="container">
+        <div class='col-md-3'>
+            <label for="baseDatePicker">Earliest Date Filter: </label>
+            <input type="text" class="ui-datepicker" id="baseDatePicker"
+            size="10" name="base" />
         </div>
-
-        @rows.map { r =>
-            <div id="requestrow" class="row bx">
-                <div class="col-sm-2">
-                @r.nfaItem
-                </div>
-                <div class="col-sm-2">
-                @r.formType
-                </div>
-                <div class="col-sm-2">
-                @r.checkCashedDate
-                </div>
-                <div class="col-sm-2">
-                @r.approvedDate
-                </div>
-            </div>
-        }
+        <div class='col-md-3'>
+            <label for="checkCashedDatePicker">Check Cashed: </label>
+            <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
+            size="10" name="checkCashed"/>
+        </div>
+        <div class='col-md-3'>
+            <select title="NFA Item Selector" id="nfaItemType" name="type">
+                <option value="">-- Select an NFA Item Type --</option>
+            </select>
+        </div>
     </div>
+    <script>
+            var data = [];
+            var updateGraph = function() {
+                data = [];
+                var graphData = [];
+                $.getJSON("/data/" + $('#baseDatePicker').val() + '/'
+                        + $('#nfaItemType').val(), function(rows){
+                    $.each(rows, function (id, row) {
+                        graphData.push([row.checkCashedDate, row.approvedDate]);
+                    });
+                    data.push({
+                        data: graphData,
+                        points: { show: true }
+                    });
+                    $.plot("#placeholder", data);
+                });
+            };
+
+            var addPrediction = function() {
+                updateGraph();
+                $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
+                        + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(dates){
+                    var date = dates.pop();
+                    data.push({
+                        color: "#ff0000",
+                        data: [dates],
+                        shadowSize: 0,
+                        points: {
+                            show: true,
+                            symbol: function(ctx, x, y, radius, shadow) {
+                                ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+                                ctx.fillStyle = "red";
+                                ctx.fill(); // fill it yourself
+                                ctx.fillStyle = "black";
+                                ctx.textAlign = 'left';
+                                ctx.fillText(date, x, y + 15); //now the text
+                            }
+                        }
+                    });
+                    $.plot("#placeholder", data);
+                });
+            };
+            $('#baseDatePicker').val("2016-01-01");
+            updateGraph();
+            $('#baseDatePicker').change(updateGraph);
+            $('#nfaItemType').change(updateGraph);
+            $('#checkCashedDatePicker').change(addPrediction);
+    </script>
 }

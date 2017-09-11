@@ -1,48 +1,56 @@
-import java.awt.Color
+package utils
+
 import scala.io.Source.fromURL
-import scala.util.Try
+import scala.util.{Success, Try}
 import scala.collection.JavaConverters
 import com.univocity.parsers.common.processor.RowListProcessor
 import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
-import com.github.nscala_time.time.Imports._
-import org.joda.time.{Days, LocalDate}
-import smile.regression.Operators
+import dal.RowRepository
+import org.joda.time.{DateTime, Days}
+import smile.regression.ols
+import scala.concurrent.Await
 
-trait LinearRegression extends Operators {
+trait LinearRegression {
 
-  private val NFATRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
-  private val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
+  protected val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
+  protected val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
+  protected val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
+    .duration.SECONDS)
+  // protected val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
-  val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
+  protected def outOfRangeFilter(checkCashedDate: Double, approvedDate: Double)
+  : Boolean = {
+    val timeDiff = approvedDate - checkCashedDate
+    approvedDate > 0 && checkCashedDate > 0 && timeDiff >= 14 && timeDiff < 1000
+  }
+  protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
+    Days.daysBetween(baseDate, date).getDays.toDouble
 
-  def predict(baseDate: String, date: String, itemType: String, verbose: Boolean, plot: Boolean): Double =
-    predict(DateTime.parse(baseDate).toLocalDate, DateTime.parse(date).toLocalDate, itemType, verbose, plot)
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): (Long, Long, String) = {
+    val dateDouble = normalizedTimeStamp(baseDate, date)
 
-  def predict(baseDate: LocalDate, date: LocalDate, itemType: String, verbose: Boolean, plot: Boolean): Double = {
-    // filter data
-    val (x, y) = (filterData _).tupled(generateData(NFATRACKER_URL))(itemType)(baseDate)
+    val dbResult = (nfaType match {
+      case Some(i) => Await.result(repo.list(), DURATION).filter(_.nfaItem.contains(i))
+      case None => Await.result(repo.list(), DURATION)
+    }).map(row => (normalizedTimeStamp(baseDate, new DateTime(row
+        .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
+        .approvedDate))))
+      .filter{ case (c, a) => outOfRangeFilter(c,a)}.toArray
+
+    val (x, y) = dbResult.unzip
 
     // add constant to explanatory variables, and create model
-    val model = ols(x.map(Array(1, _)), y)
-    if (verbose) println(model)
+    val model = ols(x.map(Array(1, _)),y)
 
-    // predict approval date
-    val dateDouble = Days.daysBetween(baseDate, date).getDays.toDouble
     val prediction = model.predict(Array(1, dateDouble))
+    val result = baseDate.toLocalDate.plusDays(prediction.floor.toInt)
 
-    // plot data, fit and prediction
-    if (plot) {
-      val plot = smile.plot.plot(Array(x, y).transpose, '@', Color.BLUE)
-      val line = Array(Array(0.0, model.predict(Array(1, 0.0))), Array(dateDouble, prediction))
-      plot.canvas.point('@', Color.RED, dateDouble, prediction)
-      plot.canvas.line(line, Color.RED)
-    }
-
-    prediction
+    (date.getMillis, result.toDate.getTime, result.toString())
   }
 
-  private def generateData(url: String): (Array[String], List[Array[String]]) = {
+  protected def generateData(url: String): (Array[String],
+    List[Array[String]]) = {
     val reader = fromURL(url).reader()
 
     // The settings object provides many configuration options// The settings object provides many configuration options
@@ -73,38 +81,30 @@ trait LinearRegression extends Operators {
     (rowProcessor.getHeaders, JavaConverters.asScalaBuffer(rowProcessor.getRows).toList)
   }
 
-  private def filterData(headers: Array[String], rows: List[Array[String]])(nfaItemType: String)(baseDate: LocalDate):
-  (Array[Double], Array[Double]) = {
+  protected def filterData(headers: Array[String], rows: List[Array[String]]):List[
+    (String, String, DateTime, DateTime)] = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
-    val includedRows =
-      rows.map(row =>
-        // filter unnecessary data
-        row.zipWithIndex.filter {
-          case (_, i) => includedHeadersIdx.contains(i)
-        }.unzip._1.filter(_ != null)
-        // filter missing data, selected type, and Form 3's
-      ).filter(_.length > 3).filter(_.contains(nfaItemType)).filterNot(_.contains("Form 3 To Dealer"))
-        // filter unnecessary data once more
-        .map(row =>
-        row.zipWithIndex.filterNot {
-          case (_, i) => i == 0 || i == 1
-        }.unzip._1
-        //convert dates to DateTime type, filter invalids
-      ).map(_.map(s => Try(DateTime.parse(s))).filter(_.isSuccess)
-        // convert dates to timestamp around given base date, filter dates before epoch
-        .map(d => Days.daysBetween(baseDate, d.get.toLocalDate).getDays.toDouble).filter(_ > 0)).filter(_.length > 1)
-        // filter ridiculous outliers
-        .filterNot(e => {
-        e(1) - e(0) < 14 || e(1) - e(0) > 1000 // fewer than two weeks, or over 1000 days
-      }
-      )
-        .toArray
-
-    // transpose result
-    (includedRows.map {
-      _ (0)
-    }, includedRows.map {
-      _ (1)
-    })
+    rows.map(row =>
+      // filter unnecessary data
+      row.zipWithIndex.filter {
+        case (_, i) => includedHeadersIdx.contains(i)
+      }.unzip._1.filter(_ != null)
+      // filter missing data, and Form 3's
+    ).filter(_.length > 3).filterNot(_.contains("Form 3 To Dealer"))
+    .map(row =>
+      row.zipWithIndex.map{
+        // apply parse on date iff column contains date
+        // otherwise wrap cell in Success for later filtering
+        case(s, i) => if (i < 2) Success(s) else Try(DateTime.parse(s))
+        // filter out failed parses
+      }.filter(_.isSuccess).map(_.get)
+      // filter incomplete data
+    ).filter(_.length > 3).map(r => (
+      r(0).toString,
+      r(1).toString,
+      r(2).asInstanceOf[DateTime],
+      r(3).asInstanceOf[DateTime])
+      // filter nonsensical dates
+    ).filter{case(_,_,checkCashed,approved) => approved.isAfter(checkCashed)}
   }
 }

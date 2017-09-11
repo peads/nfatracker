@@ -15,8 +15,9 @@ libraryDependencies += "com.github.haifengl" %% "smile-scala" % "1.4.0"
 libraryDependencies += "com.univocity" % "univocity-parsers" % "2.5.2"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.16.0"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
-libraryDependencies += "org.webjars" % "bootstrap" % "3.3.6"
+libraryDependencies += "org.webjars" % "bootstrap" % "3.3.7"
 libraryDependencies += "org.webjars" % "jquery" % "3.2.1"
+libraryDependencies += "org.webjars" % "flot" % "0.8.3-1"
 
 libraryDependencies += specs2 % Test
   
