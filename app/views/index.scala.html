@@ -6,29 +6,27 @@
 
     <div id="placeholder"></div>
 
-    <form action="@{CSRF(routes.RowController.handleDateSubmit())}" method="POST">
-        <div class="container">
-            <div class='col-md-3'>
-                <label for="baseDatePicker">Earliest Date Filter: </label>
-                <input type="text" class="ui-datepicker" id="baseDatePicker"
-                size="10" name="base" />
-            </div>
-            <div class='col-md-3'>
-                <label for="checkCashedDatePicker">Check Cashed: </label>
-                <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
-                size="10" name="checkCashed"/>
-            </div>
-            <div class='col-md-3'>
-                <select title="NFA Item Selector" id="nfaItemType" name="type">
-                    <option value="">-- Select an NFA Item Type --</option>
-                </select>
-            </div>
-            <div class="'col-md-3">
-                <button type="submit" class="btn btn-success">
-                    Submit <span class="fa fa-arrow-right"></span></button>
-            </div>
+   <div class="container">
+        <div class='col-md-3'>
+            <label for="baseDatePicker">Earliest Date Filter: </label>
+            <input type="text" class="ui-datepicker" id="baseDatePicker"
+            size="10" name="base" />
         </div>
-    </form>
+        <div class='col-md-3'>
+            <label for="checkCashedDatePicker">Check Cashed: </label>
+            <input type="text" class="ui-datepicker" id="checkCashedDatePicker"
+            size="10" name="checkCashed"/>
+        </div>
+        <div class='col-md-3'>
+            <select title="NFA Item Selector" id="nfaItemType" name="type">
+                <option value="">-- Select an NFA Item Type --</option>
+            </select>
+        </div>
+        <div class="'col-md-3">
+            <button type="submit" class="btn btn-success">
+                Submit <span class="fa fa-arrow-right"></span></button>
+        </div>
+    </div>
     <script>
             var updateGraph = function() {
                 var data = [];

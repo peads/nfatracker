@@ -17,6 +17,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
                     (implicit ec: ExecutionContext) extends AbstractController(cc)
                     with I18nSupport with LinearRegression {
   /**
+    * Partially applied function allowing mixin to access injected database
+    * reference.
+    */
+  private val PREDICT: (DateTime, DateTime, String) => String = predict(repo)(_:
+    DateTime, _: DateTime, _: String)
+
+  /**
    * The list action.
    */
   def list = Action.async { implicit request =>
@@ -61,23 +68,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   }
 
   /**
-    * Partially applied function allowing mixin to access injected database
-    * reference.
+    * A REST endpoint that gets the prediction given the base date, check cashed date and item type.
     */
-  private val predict: (DateTime, DateTime, String) => String = predict(repo)(_:
-    DateTime, _: DateTime, _: String)
-  /**
-    * The submit action.
-    */
-  def handleDateSubmit = Action { implicit request => {
-      val body = request.body.asFormUrlEncoded
-      val checkCashedString = body.get("checkCashed").mkString
-      val baseDateString = body.get("base").mkString
-      val nfaItemType = body.get("type").mkString
-      Ok(views.html.index(predict(DateTime.parse(baseDateString), DateTime
-        .parse(checkCashedString), nfaItemType)))
-    }
+  def getPrediction(date: String, baseDate: String, nfaType: String) = Action { implicit request =>
+      Ok(Json.toJson(PREDICT(DateTime.parse(baseDate), DateTime
+        .parse(date), nfaType)))
   }
+
   /**
     * The index action.
     */
