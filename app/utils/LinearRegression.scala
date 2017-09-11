@@ -27,16 +27,16 @@ trait LinearRegression {
   protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: String): String = {
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): (Long, Long, String) = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
-    val dbResult = Await.result(repo.list(), DURATION).filter(_.nfaItem.contains
-    (nfaType))
-      .map(row => (normalizedTimeStamp(baseDate, new DateTime(row
+    val dbResult = (nfaType match {
+      case Some(i) => Await.result(repo.list(), DURATION).filter(_.nfaItem.contains(i))
+      case None => Await.result(repo.list(), DURATION)
+    }).map(row => (normalizedTimeStamp(baseDate, new DateTime(row
         .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
         .approvedDate))))
-      .filter{ case (c, a) => outOfRangeFilter(c,a)}
-      .toArray
+      .filter{ case (c, a) => outOfRangeFilter(c,a)}.toArray
 
     val (x, y) = dbResult.unzip
 
@@ -44,8 +44,9 @@ trait LinearRegression {
     val model = ols(x.map(Array(1, _)),y)
 
     val prediction = model.predict(Array(1, dateDouble))
+    val result = baseDate.toLocalDate.plusDays(prediction.floor.toInt)
 
-    baseDate.toLocalDate.plusDays(prediction.floor.toInt).toString()
+    (date.getMillis, result.toDate.getTime, result.toString())
   }
 
   protected def generateData(url: String): (Array[String],

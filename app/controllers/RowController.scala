@@ -20,8 +20,8 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     * Partially applied function allowing mixin to access injected database
     * reference.
     */
-  private val PREDICT: (DateTime, DateTime, String) => String = predict(repo)(_:
-    DateTime, _: DateTime, _: String)
+  private val PREDICT: (DateTime, DateTime, Option[String]) => (Long, Long, String) = predict(repo)(_:
+    DateTime, _: DateTime, _: Option[String])
 
   /**
    * The list action.
@@ -72,7 +72,7 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     */
   def getPrediction(date: String, baseDate: String, nfaType: String) = Action { implicit request =>
       Ok(Json.toJson(PREDICT(DateTime.parse(baseDate), DateTime
-        .parse(date), nfaType)))
+        .parse(date), Option(nfaType))))
   }
 
   /**

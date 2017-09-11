@@ -4,7 +4,8 @@
 
 # Home page
 GET     /                           controllers.RowController.index
-GET     /predict/:baseDate/:nfaType/:date   controllers.RowController.getPrediction(date: String, baseDate: String, nfaType: String)
+GET     /predict/:date/:baseDate/   controllers.RowController.getPrediction(date: String, baseDate: String, nfaType: String = null)
+GET     /predict/:date/:baseDate/:nfaType  controllers.RowController.getPrediction(date: String, baseDate: String, nfaType: String)
 GET     /data/:baseDate/            controllers.RowController.getFilteredJson(baseDate: String, nfaType: String = null)
 GET     /data/:baseDate/:nfaType    controllers.RowController.getFilteredJson(baseDate: String, nfaType: String)
 GET     /list                       controllers.RowController.list

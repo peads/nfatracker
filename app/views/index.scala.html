@@ -28,20 +28,49 @@
         </div>
     </div>
     <script>
+            var data = [];
             var updateGraph = function() {
-                var data = [];
+                data = [];
+                var graphData = [];
                 $.getJSON("/data/" + $('#baseDatePicker').val() + '/'
                         + $('#nfaItemType').val(), function(rows){
                     $.each(rows, function (id, row) {
-                        data.push([row.checkCashedDate, row.approvedDate]);
+                        graphData.push([row.checkCashedDate, row.approvedDate]);
                     });
-                    $.plot("#placeholder", [{
-                        data: data,
+                    data.push({
+                        data: graphData,
                         points: { show: true }
-                    }]);
+                    });
+                    $.plot("#placeholder", data);
+                });
+            };
+
+            var addPrediction = function() {
+                updateGraph();
+                $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
+                        + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(rows){
+                    var date = rows.pop();
+                    data.push({
+                        color: "#ff0000",
+                        data: [rows],
+                        shadowSize: 0,
+                        points: {
+                            show: true,
+                            symbol: function(ctx, x, y, radius, shadow) {
+                                ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+                                ctx.fillStyle = "red";
+                                ctx.fill(); // fill it yourself
+                                ctx.fillStyle = "black";
+                                ctx.textAlign = 'left';
+                                ctx.fillText(date, x, y + 15); //now the text
+                            }
+                        }
+                    });
+                    $.plot("#placeholder", data);
                 });
             };
             $('#baseDatePicker').change(updateGraph);
             $('#nfaItemType').change(updateGraph);
+            $('#checkCashedDatePicker').change(addPrediction);
     </script>
 }
