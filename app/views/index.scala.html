@@ -22,10 +22,6 @@
                 <option value="">-- Select an NFA Item Type --</option>
             </select>
         </div>
-        <div class="'col-md-3">
-            <button type="submit" class="btn btn-success">
-                Submit <span class="fa fa-arrow-right"></span></button>
-        </div>
     </div>
     <script>
             var data = [];
@@ -69,6 +65,8 @@
                     $.plot("#placeholder", data);
                 });
             };
+            $('#baseDatePicker').val("2016-01-01");
+            updateGraph();
             $('#baseDatePicker').change(updateGraph);
             $('#nfaItemType').change(updateGraph);
             $('#checkCashedDatePicker').change(addPrediction);
