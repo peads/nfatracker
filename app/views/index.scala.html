@@ -48,11 +48,11 @@
             var addPrediction = function() {
                 updateGraph();
                 $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
-                        + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(rows){
-                    var date = rows.pop();
+                        + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(dates){
+                    var date = dates.pop();
                     data.push({
                         color: "#ff0000",
-                        data: [rows],
+                        data: [dates],
                         shadowSize: 0,
                         points: {
                             show: true,

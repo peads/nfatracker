@@ -62,7 +62,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
    * The starting point for all queries on the rows table.
    */
   private val rows = TableQuery[RowTable]
-
+  private val MAX_DAYS: Long = (8.64 * Math.pow(10, 10)).asInstanceOf[Long]
   /**
     * Curried filter function.
     * @param date Date after which the data is filtered.
@@ -75,7 +75,7 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   private def filter(date: Long, item: Option[String])
                     (approved: Rep[Long], cashed: Rep[Long],
                      nfaItem: Rep[String]) : Rep[Boolean] = {
-    val isWithinDateRange = approved >= date && cashed >= date
+    val isWithinDateRange = approved >= date && cashed >= date && (approved - cashed) < MAX_DAYS
     item match {
       case Some(i) => isWithinDateRange && nfaItem === i
       case None => isWithinDateRange
