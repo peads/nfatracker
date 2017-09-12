@@ -9,7 +9,6 @@ scalaVersion := "2.12.2"
 libraryDependencies += guice
 libraryDependencies += "com.typesafe.play" %% "play-slick" %  "3.0.0-M5"
 libraryDependencies += "com.typesafe.play" %% "play-slick-evolutions" % "3.0.0-M5"
-libraryDependencies += "com.h2database" % "h2" % "1.4.194"
 //libraryDependencies += "com.github.haifengl" % "smile-netlib" % "1.4.0"
 libraryDependencies += "com.github.haifengl" %% "smile-scala" % "1.4.0"
 libraryDependencies += "com.univocity" % "univocity-parsers" % "2.5.2"
