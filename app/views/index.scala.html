@@ -49,27 +49,28 @@
                 });
             };
             var addPrediction = function() {
-                updateGraph();
-                $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
-                        + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(dates){
-                    var date = dates.pop();
-                    data.push({
-                        color: "#ff0000",
-                        data: [dates],
-                        shadowSize: 0,
-                        points: {
-                            show: true,
-                            symbol: function(ctx, x, y, radius, shadow) {
-                                ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
-                                ctx.fillStyle = "red";
-                                ctx.fill(); // fill it yourself
-                                ctx.fillStyle = "black";
-                                ctx.textAlign = 'left';
-                                ctx.fillText(date, x, y + 15); //now the text
-                            }
-                        }
-                    });
-                    $.plot("#placeholder", data);
+                updateGraph().then(function(){
+		    $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
+			    + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function(dates){
+			var date = dates.pop();
+			data.push({
+			    color: "#ff0000",
+			    data: [dates],
+			    shadowSize: 0,
+			    points: {
+				show: true,
+				symbol: function(ctx, x, y, radius, shadow) {
+				    ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+				    ctx.fillStyle = "red";
+				    ctx.fill(); // fill it yourself
+				    ctx.fillStyle = "black";
+				    ctx.textAlign = 'left';
+				    ctx.fillText(date, x, y + 15); //now the text
+				}
+			    }
+			});
+			$.plot("#placeholder", data);
+		    });
                 });
             };
             $('#baseDatePicker').val("2016-01-01");
