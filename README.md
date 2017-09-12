@@ -10,5 +10,9 @@ Follow the instructions [here](http://www.scala-sbt.org/release/docs/Installing-
     sudo -u postgres createuser -E -P user_name
     sudo -u postgres createdb -O user_name database_name
 ## usage
-    Usage: sbt run
-
+    sbt dist
+    sbt playGenerateSecret
+    <Here an environment variable called PLAY_SECRET is saved via the preferred method.>
+    <Unzip the dist archive>
+    /path/to/unzipped/dist/bin/nfatracker -Dplay.http.secret.key=$PLAY_SECRET -Dhttp.agent="Mozilla/5.0"
+More information about the Play ApplicationSecret can be found [here](https://www.playframework.com/documentation/2.6.x/ApplicationSecret).
