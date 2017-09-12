@@ -22,13 +22,17 @@
                 <option value="">-- Select an NFA Item Type --</option>
             </select>
         </div>
+        <div class="'colmd3">
+            <button id="submitButton" type="submit" class="btn btnsuccess">
+                Submit <span class="fa faarrowright"></span></button>
+        </div>
     </div>
     <script>
             var data = [];
             var updateGraph = function() {
                 data = [];
                 var graphData = [];
-                $.getJSON("/data/" + $('#baseDatePicker').val() + '/'
+                return $.getJSON("/data/" + $('#baseDatePicker').val() + '/'
                         + $('#nfaItemType').val(), function(rows){
                     $.each(rows, function (id, row) {
                         graphData.push([row.checkCashedDate, row.approvedDate]);
@@ -37,10 +41,13 @@
                         data: graphData,
                         points: { show: true }
                     });
+                });
+            };
+            var showUpdate = function() {
+                updateGraph().then(function(){
                     $.plot("#placeholder", data);
                 });
             };
-
             var addPrediction = function() {
                 updateGraph();
                 $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
@@ -66,9 +73,10 @@
                 });
             };
             $('#baseDatePicker').val("2016-01-01");
-            updateGraph();
-            $('#baseDatePicker').change(updateGraph);
-            $('#nfaItemType').change(updateGraph);
+            showUpdate();
+            $('#baseDatePicker').change(showUpdate);
+            $('#nfaItemType').change(showUpdate);
             $('#checkCashedDatePicker').change(addPrediction);
+            $('#submitButton').click(addPrediction);
     </script>
 }

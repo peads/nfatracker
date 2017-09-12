@@ -5,14 +5,14 @@ Statistical analysis tools for NFATracker's data
 #### Get sbt
 Follow the instructions [here](http://www.scala-sbt.org/release/docs/Installing-sbt-on-Linux.html) to install SBT.
 #### Install packages
-    sudo apt install git default-jdk
+    sudo apt install git default-jdk postgresql
+#### Setup database
+    sudo -u postgres createuser -E -P user_name
+    sudo -u postgres createdb -O user_name database_name
 ## usage
-    Usage: sbt "run -b <date> -d <date> -t <type> [options]"
-      -b, --baseDate <value>   Date around which to normalize data (i.e. earliest data used in prediction). Format: yyyy-MM-DD
-      -d, --date <value>       Date check was cashed by the NFA and for which the prediction is made. Format: yyyy-MM-DD
-      -t, --nfa-item-type <value>
-                               Type of NFA item on which to resrict data.
-      --plot-regression        Plot a linear regression of data normalized around BASEDATE.
-      -v, --verbose            Print verbose information during execution.
-      --help                   prints this usage text
-
+    sbt dist
+    sbt playGenerateSecret
+    <Here an environment variable called PLAY_SECRET is saved via the preferred method.>
+    <Unzip the dist archive>
+    /path/to/unzipped/dist/bin/nfatracker -Dplay.http.secret.key=$PLAY_SECRET -Dhttp.agent="Mozilla/5.0"
+More information about the Play ApplicationSecret can be found [here](https://www.playframework.com/documentation/2.6.x/ApplicationSecret).
