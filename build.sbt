@@ -19,6 +19,7 @@ libraryDependencies += "org.webjars" % "bootstrap" % "3.3.7"
 libraryDependencies += "org.webjars" % "jquery" % "3.2.1"
 libraryDependencies += "org.webjars" % "flot" % "0.8.3-1"
 libraryDependencies += "org.webjars" % "bootstrap-datepicker" % "1.7.1"
+libraryDependencies += "org.postgresql" % "postgresql" % "9.4.1212"
 
 libraryDependencies += specs2 % Test
   
