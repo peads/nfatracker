@@ -1,6 +1,6 @@
 name := """nfatracker"""
 
-version := "2.6.x"
+version := "0.3.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
