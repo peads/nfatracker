@@ -8,6 +8,3 @@ create table "rows" (
   "Approved" bigint not null
 );
 
-# --- !Downs
-
-drop table "rows";
