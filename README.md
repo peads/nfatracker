@@ -14,10 +14,10 @@ Follow the instructions [here](http://www.scala-sbt.org/release/docs/Installing-
     sbt playGenerateSecret
     <Here an environment variable called PLAY_SECRET is saved via the preferred method.>
     <Unzip the dist archive>
-    /path/to/unzipped/dist/bin/nfatracker -Dplay.http.secret.key=$PLAY_SECRET -Dhttp.agent="Mozilla/5.0"
+    /path/to/unzipped/dist/bin/nfatracker -Dhttp.agent="Mozilla/5.0"
 More information about the Play ApplicationSecret can be found [here](https://www.playframework.com/documentation/2.6.x/ApplicationSecret).
 ## Boxfuse
-    boxfuse run /path/to/dist/nfatracker-<version>.zip -env=dev -jvm.args=-Dhttp.agent="Mozilla/5.0"
+    boxfuse run /path/to/dist/nfatracker-<version>.zip -env=dev -jvm.args=-Dhttp.agent="Mozilla/5.0" -envvars.PLAY_SECRET=<Your play secret>
 This project is setup to be readily deployed using Boxfuse with the above command as a template.
 
 An example deployment can be found [here](http://nfatracker-peads.boxfuse.io:9000/).
