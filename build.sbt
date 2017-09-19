@@ -4,7 +4,7 @@ version := "0.3.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.12.2"
+scalaVersion := "0.3.0"
 
 libraryDependencies += guice
 libraryDependencies += "com.typesafe.play" %% "play-slick" %  "3.0.0-M5"
