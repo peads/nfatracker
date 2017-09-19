@@ -1,5 +1,11 @@
 slick.dbs.default.driver="slick.driver.PostgresDriver$" # You must provide the required Slick driver!
 slick.dbs.default.db.driver="org.postgresql.Driver"
+// default database url, or boxfuse env variable
 slick.dbs.default.db.url="jdbc:postgresql://127.0.0.1:5432/database_name"
+slick.dbs.default.db.url=${?BOXFUSE_DATABASE_URL}
+// default user, or boxfuse env variable
 slick.dbs.default.db.user="user_name"
+slick.dbs.default.db.url=${?BOXFUSE_DATABASE_USER}
+// default password, or boxfuse env variable
 slick.dbs.default.db.password="password"
+slick.dbs.default.db.url=${?BOXFUSE_DATABASE_PASSWORD}
