@@ -16,3 +16,10 @@ Follow the instructions [here](http://www.scala-sbt.org/release/docs/Installing-
     <Unzip the dist archive>
     /path/to/unzipped/dist/bin/nfatracker -Dplay.http.secret.key=$PLAY_SECRET -Dhttp.agent="Mozilla/5.0"
 More information about the Play ApplicationSecret can be found [here](https://www.playframework.com/documentation/2.6.x/ApplicationSecret).
+## Boxfuse
+    boxfuse run /path/to/dist/nfatracker-<version>.zip -env=dev -jvm.args=-Dhttp.agent="Mozilla/5.0"
+This project is setup to be readily deployed using Boxfuse with the above command as a template.
+
+An example deployment can be found [here](http://nfatracker-peads.boxfuse.io:9000/).
+
+More information about deploying to Boxfuse and AWS can be found [here](https://www.playframework.com/documentation/2.6.x/Deploying-Boxfuse#Deploying-to-Boxfuse-and-AWS).
