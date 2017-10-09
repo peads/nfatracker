@@ -8,16 +8,16 @@ import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import dal.RowRepository
 import org.joda.time.{DateTime, Days}
-import smile.regression.ols
+import smile.regression.{gpr, ols}
+import smile.math.kernel.{PolynomialKernel, GaussianKernel}
 import scala.concurrent.Await
 
-trait LinearRegression {
+trait Regression {
 
   protected val NFA_TRACKER_URL = "http://www.nfatracker.com/wp-content/themes/smartsolutions/inc/export/"
   protected val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
   protected val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
     .duration.SECONDS)
-  // protected val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
   protected def outOfRangeFilter(checkCashedDate: Double, approvedDate: Double)
   : Boolean = {
@@ -27,7 +27,8 @@ trait LinearRegression {
   protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): (Long, Long, String) = {
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime,
+                                             nfaType: Option[String]): List[(String, Long, Long, String)] = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
     val dbResult = (nfaType match {
@@ -40,13 +41,21 @@ trait LinearRegression {
 
     val (x, y) = dbResult.unzip
 
-    // add constant to explanatory variables, and create model
-    val model = ols(x.map(Array(1, _)),y)
+    // add constant to explanatory variables and data, and create models
+    val explanatoryVars = x.map(Array(1, _))
+    val predictionData = Array(1, dateDouble)
 
-    val prediction = model.predict(Array(1, dateDouble))
-    val result = baseDate.toLocalDate.plusDays(prediction.floor.toInt)
+    val models = Map("Ordinary Least Squares" -> ols(explanatoryVars, y),
+      "Polynomial Kernel GPR" -> gpr(explanatoryVars, y, new PolynomialKernel(2), 1),
+      "Gaussian Mercer Kernel GPR" -> gpr(explanatoryVars, y, new GaussianKernel(10), 1))
 
-    (date.getMillis, result.toDate.getTime, result.toString())
+    val predictions = models.map {
+      case (key, value: smile.regression.Regression[Array[Double]]) => (key, value.predict(predictionData))
+    }
+    // create expected results list
+    val validPredictions = for ((key, value) <- predictions if value > dateDouble) yield (key, value)
+    validPredictions.map{case (key, value) => (key, baseDate.toLocalDate.plusDays(value.floor.toInt))}
+      .map{case (key, value) => (key, date.getMillis, value.toDate.getTime, value.toString)}.toList
   }
 
   protected def generateData(url: String): (Array[String],

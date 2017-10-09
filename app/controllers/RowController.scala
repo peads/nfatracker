@@ -8,19 +8,19 @@ import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
 import play.api.mvc._
-import utils.{LinearRegression, UpdateAction}
+import utils.{Regression, UpdateAction}
 
 import scala.concurrent.{Await, ExecutionContext}
 
 class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
                               cc: ControllerComponents)
                     (implicit ec: ExecutionContext) extends AbstractController(cc)
-                    with I18nSupport with LinearRegression {
+                    with I18nSupport with Regression {
   /**
     * Partially applied function allowing mixin to access injected database
     * reference.
     */
-  private val PREDICT: (DateTime, DateTime, Option[String]) => (Long, Long, String) = predict(repo)(_:
+  private val PREDICT: (DateTime, DateTime, Option[String]) => List[(String, Long, Long, String)] = predict(repo)(_:
     DateTime, _: DateTime, _: Option[String])
 
   /**
@@ -79,6 +79,6 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     * The index action.
     */
   def index = Action { implicit request =>
-    Ok(views.html.index(""))
+    Ok(views.html.index())
   }
 }
