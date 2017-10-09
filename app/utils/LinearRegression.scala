@@ -18,7 +18,6 @@ trait LinearRegression {
   protected val INCLUDED_HEADERS = List("NFAItem", "FormType", "Approved", "CheckCashed")
   protected val DURATION = scala.concurrent.duration.Duration(30, scala.concurrent
     .duration.SECONDS)
-  // protected val NFA_ITEM_TYPES = List("Suppressor", "SBR", "SBS", "MG", "AOW")
 
   protected def outOfRangeFilter(checkCashedDate: Double, approvedDate: Double)
   : Boolean = {
@@ -47,11 +46,15 @@ trait LinearRegression {
 
     val olsModel = ols(explanatoryVars, y)
     val polynomialGprModel = gpr(explanatoryVars, y, new PolynomialKernel(2), 1)
+    val gaussianGprModel = gpr(explanatoryVars, y, new GaussianKernel(10), 1)
 
     val olsPrediction = olsModel.predict(predictionData)
     val polynomialGprPrediction = polynomialGprModel.predict(predictionData)
+    val gaussianGprPrediction = gaussianGprModel.predict(predictionData)
 
-    val predictions = List(olsPrediction,polynomialGprPrediction)
+    val predictions = if (gaussianGprPrediction > dateDouble) List(olsPrediction,
+      polynomialGprPrediction, gaussianGprPrediction) else List(olsPrediction, polynomialGprPrediction)
+
     // create expected results list
     predictions.map(x => baseDate.toLocalDate.plusDays(x.floor.toInt)).map(x => (date.getMillis, x.toDate.getTime, x.toString))
   }
