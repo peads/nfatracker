@@ -8,7 +8,8 @@ import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import dal.RowRepository
 import org.joda.time.{DateTime, Days}
-import smile.regression.ols
+import smile.regression.{gpr, ols}
+import smile.math.kernel.{PolynomialKernel, GaussianKernel}
 import scala.concurrent.Await
 
 trait LinearRegression {
@@ -27,7 +28,7 @@ trait LinearRegression {
   protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): (Long, Long, String) = {
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): List[(Long, Long, String)] = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
     val dbResult = (nfaType match {
@@ -40,13 +41,19 @@ trait LinearRegression {
 
     val (x, y) = dbResult.unzip
 
-    // add constant to explanatory variables, and create model
-    val model = ols(x.map(Array(1, _)),y)
+    // add constant to explanatory variables and data, and create models
+    val explanatoryVars = x.map(Array(1, _))
+    val predictionData = Array(1, dateDouble)
 
-    val prediction = model.predict(Array(1, dateDouble))
-    val result = baseDate.toLocalDate.plusDays(prediction.floor.toInt)
+    val olsModel = ols(explanatoryVars, y)
+    val polynomialGprModel = gpr(explanatoryVars, y, new PolynomialKernel(2), 1)
 
-    (date.getMillis, result.toDate.getTime, result.toString())
+    val olsPrediction = olsModel.predict(predictionData)
+    val polynomialGprPrediction = polynomialGprModel.predict(predictionData)
+
+    val predictions = List(olsPrediction,polynomialGprPrediction)
+    // create expected results list
+    predictions.map(x => baseDate.toLocalDate.plusDays(x.floor.toInt)).map(x => (date.getMillis, x.toDate.getTime, x.toString))
   }
 
   protected def generateData(url: String): (Array[String],
