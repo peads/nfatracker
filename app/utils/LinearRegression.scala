@@ -44,19 +44,14 @@ trait LinearRegression {
     val explanatoryVars = x.map(Array(1, _))
     val predictionData = Array(1, dateDouble)
 
-    val olsModel = ols(explanatoryVars, y)
-    val polynomialGprModel = gpr(explanatoryVars, y, new PolynomialKernel(2), 1)
-    val gaussianGprModel = gpr(explanatoryVars, y, new GaussianKernel(10), 1)
+    val models = List(ols(explanatoryVars, y), gpr(explanatoryVars, y, new PolynomialKernel(2), 1),
+      gpr(explanatoryVars, y, new GaussianKernel(10), 1))
 
-    val olsPrediction = olsModel.predict(predictionData)
-    val polynomialGprPrediction = polynomialGprModel.predict(predictionData)
-    val gaussianGprPrediction = gaussianGprModel.predict(predictionData)
-
-    val predictions = if (gaussianGprPrediction > dateDouble) List(olsPrediction,
-      polynomialGprPrediction, gaussianGprPrediction) else List(olsPrediction, polynomialGprPrediction)
+    val predictions = models.map(_.predict(predictionData))
 
     // create expected results list
-    predictions.map(x => baseDate.toLocalDate.plusDays(x.floor.toInt)).map(x => (date.getMillis, x.toDate.getTime, x.toString))
+    val validPredictions = for (x <- predictions if x > dateDouble) yield x
+    validPredictions.map(x => baseDate.toLocalDate.plusDays(x.floor.toInt)).map(x => (date.getMillis, x.toDate.getTime, x.toString))
   }
 
   protected def generateData(url: String): (Array[String],
