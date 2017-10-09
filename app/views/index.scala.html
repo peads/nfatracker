@@ -52,6 +52,7 @@
                     $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
                             + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function (dates) {
                         dates.forEach(function (x, idx) {
+                            var regressionType = x.shift();
                             var date = x.pop();
                             data.push({
                                 //color: "#ff0000",
@@ -64,7 +65,7 @@
                                         ctx.fill(); // fill it yourself
                                         ctx.fillStyle = "black";
                                         ctx.textAlign = 'left';
-                                        ctx.fillText(date, x + 5, y + 15*(idx % 2 == 0)); //now the text
+                                        ctx.fillText(regressionType + ": " + date, x + 5, y + 15*(idx % 2 == 0)); //now the text
                                     }
                                 }
                             });

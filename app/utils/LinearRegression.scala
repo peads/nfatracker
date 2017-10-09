@@ -8,7 +8,7 @@ import com.univocity.parsers.csv.CsvParser
 import com.univocity.parsers.csv.CsvParserSettings
 import dal.RowRepository
 import org.joda.time.{DateTime, Days}
-import smile.regression.{gpr, ols}
+import smile.regression.{gpr, ols, Regression}
 import smile.math.kernel.{PolynomialKernel, GaussianKernel}
 import scala.concurrent.Await
 
@@ -27,7 +27,7 @@ trait LinearRegression {
   protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
-  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): List[(Long, Long, String)] = {
+  protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime, nfaType: Option[String]): List[(String, Long, Long, String)] = {
     val dateDouble = normalizedTimeStamp(baseDate, date)
 
     val dbResult = (nfaType match {
@@ -44,14 +44,14 @@ trait LinearRegression {
     val explanatoryVars = x.map(Array(1, _))
     val predictionData = Array(1, dateDouble)
 
-    val models = List(ols(explanatoryVars, y), gpr(explanatoryVars, y, new PolynomialKernel(2), 1),
-      gpr(explanatoryVars, y, new GaussianKernel(10), 1))
+    val models = Map("Ordinary Least Squares" -> ols(explanatoryVars, y), "Polynomial Kernel GPR" -> gpr(explanatoryVars, y, new PolynomialKernel(2), 1),
+      "Gaussian Mercer Kernel GPR" -> gpr(explanatoryVars, y, new GaussianKernel(10), 1))
 
-    val predictions = models.map(_.predict(predictionData))
-
+    val predictions = models.map { case (key, value: Regression[Array[Double]]) => (key, value.predict(predictionData))}
     // create expected results list
-    val validPredictions = for (x <- predictions if x > dateDouble) yield x
-    validPredictions.map(x => baseDate.toLocalDate.plusDays(x.floor.toInt)).map(x => (date.getMillis, x.toDate.getTime, x.toString))
+    val validPredictions = for ((key, value) <- predictions if value > dateDouble) yield (key, value)
+    validPredictions.map{case (key, value) => (key, baseDate.toLocalDate.plusDays(value.floor.toInt))}
+      .map{case (key, value) => (key, date.getMillis, value.toDate.getTime, value.toString)}.toList
   }
 
   protected def generateData(url: String): (Array[String],
