@@ -26,6 +26,14 @@
         </div>
     </div>
     <script>
+            $('#baseDatePicker').datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true
+            });
+            $('#checkCashedDatePicker').datepicker({
+                format: "yyyy-mm-dd",
+                autoclose: true
+            });
             const X_AUTO_MARGIN = 0.02;
             var data = [];
             var updateGraph = function () {
@@ -65,7 +73,7 @@
                                         ctx.fill(); // fill it yourself
                                         ctx.fillStyle = "black";
                                         ctx.textAlign = 'left';
-                                        ctx.fillText(regressionType + ": " + date, x + 5, y + 15*(idx % 2 == 0)); //now the text
+                                        ctx.fillText(regressionType + ": " + date, x - 185, y + 15*(idx % 2 == 0)); //now the text
                                     }
                                 }
                             });
