@@ -27,11 +27,17 @@
     </div>
     <script>
             $('#baseDatePicker').datepicker({
-                format: "yyyy-mm-dd",
+                format: 'yyyy-mm-dd',
+                viewMode: 'days',
+                minViewMode: 'days',
+                maxViewMode: 'years',
                 autoclose: true
             });
             $('#checkCashedDatePicker').datepicker({
-                format: "yyyy-mm-dd",
+                format: 'yyyy-mm-dd',
+                viewMode: 'days',
+                minViewMode: 'days',
+                maxViewMode: 'years',
                 autoclose: true
             });
             const X_AUTO_MARGIN = 0.02;
@@ -57,7 +63,8 @@
             };
             var addPrediction = function () {
                 updateGraph().then(function () {
-                    $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
+                    $('#placeholder').spin();
+                    return $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
                             + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function (dates) {
                         dates.forEach(function (x, idx) {
                             var regressionType = x.shift();
@@ -80,7 +87,7 @@
                         });
                         $.plot("#placeholder", data, {xaxis: {autoscaleMargin: X_AUTO_MARGIN}});
                     });
-                });
+                }).then(function () {$('#placeholder').spin(false);});
             };
             $('#baseDatePicker').val("2016-01-01");
             showUpdate();
