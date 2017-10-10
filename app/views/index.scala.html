@@ -61,9 +61,16 @@
                     $.plot("#placeholder", data, {xaxis: {autoscaleMargin: X_AUTO_MARGIN}});
                 });
             };
+            var setDisabledGuiAndSpin = function(b){
+                $('#placeholder').spin(b);
+                $('#baseDatePicker').prop('disabled', b);
+                $('#checkCashedDatePicker').prop('disabled', b);
+                $('#nfaItemType').prop('disabled', b);
+                $('#submitButton').prop('disabled', b);
+            };
             var addPrediction = function () {
                 updateGraph().then(function () {
-                    $('#placeholder').spin();
+                    setDisabledGuiAndSpin(true);
                     return $.getJSON("/predict/" + $('#checkCashedDatePicker').val() + '/'
                             + $('#baseDatePicker').val() + '/' + $('#nfaItemType').val(), function (dates) {
                         dates.forEach(function (x, idx) {
@@ -87,7 +94,7 @@
                         });
                         $.plot("#placeholder", data, {xaxis: {autoscaleMargin: X_AUTO_MARGIN}});
                     });
-                }).then(function () {$('#placeholder').spin(false);});
+                }).then(setDisabledGuiAndSpin.bind(null, false));
             };
             $('#baseDatePicker').val("2016-01-01");
             showUpdate();
