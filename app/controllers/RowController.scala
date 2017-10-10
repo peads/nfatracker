@@ -32,17 +32,23 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
 
   /**
     * Update database with new transfers from NFATracker.
-    * Uses custom UpdateAction as ACL only allowing localhost access.
+    * Uses custom UpdateAction as ACL only allowing restricted access based on IP.
     */
   def updateRows = updateAction { implicit request =>
     val initialTableSize = Await.result(repo.length(), DURATION)
 
-    (filterData _).tupled(generateData
-    (NFA_TRACKER_URL)).drop(initialTableSize).foreach((repo.create _).tupled(_))
+    (filterData _).tupled(generateData(NFA_TRACKER_URL)).zipWithIndex.foreach
+    { case ((nfaItem, formType, checkCashedDate, approvedDate), id) =>
+      Await.result(
+        repo.update(id, nfaItem, formType, checkCashedDate, approvedDate)
+        , DURATION) match {
+          case Some(r) => Logger.debug("Inserted " + r.toString)
+          case None => Logger.debug("Updated " + id)
+        }
+    }
 
     val finalTableSize = Await.result(repo.length(), DURATION)
     val updateSize = finalTableSize - initialTableSize
-
     Logger.info(s"Database updated with $updateSize new entries.")
 
     Redirect(routes.RowController.index)

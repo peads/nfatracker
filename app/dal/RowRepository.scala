@@ -116,6 +116,19 @@ class RowRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)
   }
 
   /**
+    * Update or insert given data into database.
+    * @param id uid of row.
+    * @param nfaItem Item type.
+    * @param formType Form type.
+    * @param approvedDate Date of approval.
+    * @param checkCashedDate Date check was cashed.
+    * @return
+    */
+  def update(id: Long, nfaItem:String, formType:String, checkCashedDate:DateTime, approvedDate:DateTime) = db.run {
+    (rows returning rows).insertOrUpdate(Row(id, nfaItem, formType, approvedDate.getMillis, checkCashedDate.getMillis))
+  }
+
+  /**
     * Lists all the rows that match the given criteria.
     * @param baseDate Date after which the data is filtered.
     * @param nfaItem Item type on which to filter.
