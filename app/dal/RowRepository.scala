@@ -20,8 +20,9 @@ class RowRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
   // We want the JdbcProfile for this provider
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  // These imports are important, the first one brings db into scope, which will let you do the actual db operations.
-  // The second one brings the Slick DSL into scope, which lets you define the table and other queries.
+  // These imports are important, the first one brings db into scope, which will let you do the
+  // actual db operations. The second one brings the Slick DSL into scope, which lets you define the
+  // table and other queries.
   import dbConfig._
   import profile.api._
 
@@ -87,16 +88,12 @@ class RowRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
   /**
     * List all the people in the database.
     */
-  def list(): Future[Seq[Row]] = db.run {
-    rows.result
-  }
+  def list(): Future[Seq[Row]] = db.run { rows.result }
 
   /**
     * Number of entries in the rows table.
     */
-  def length(): Future[Int] = db.run {
-    rows.length.result
-  }
+  def length(): Future[Int] = db.run { rows.length.result }
 
   /**
     * Update or insert given data into database.
@@ -121,7 +118,8 @@ class RowRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
     */
   def listWithFilters(baseDate: String, nfaItem: Option[String]): Future[Seq[Row]] = db.run {
     val limit = DateTime.parse(baseDate).getMillis
-    val isGraphed: (Rep[Long], Rep[Long], Rep[String]) => Rep[Boolean] // partially applied filter function
+    // partially applied filter function
+    val isGraphed: (Rep[Long], Rep[Long], Rep[String]) => Rep[Boolean]
     = filter(limit, nfaItem)(_: Rep[Long], _: Rep[Long], _: Rep[String])
 
     (for (c <- rows; if isGraphed(c.approvedDate, c.checkCashedDate, c.nfaItem)) yield c).result
