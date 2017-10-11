@@ -1,5 +1,5 @@
 @(rows: Seq[Row])(implicit request: RequestHeader, messages:
-    Messages)
+Messages)
 
 @main("NFATracker Data Listing") {
 
@@ -14,7 +14,7 @@
         @rows.map { r =>
             <div id="requestrow" class="row bx">
                 <div class="col-sm-2">
-                @r.nfaItem
+                    @r.nfaItem
                 </div>
                 <div class="col-sm-2">
                 @r.formType

@@ -24,7 +24,8 @@ trait Regression {
     val timeDiff = approvedDate - checkCashedDate
     approvedDate > 0 && checkCashedDate > 0 && timeDiff >= 14 && timeDiff < 1000
   }
-  protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime) : Double =
+
+  protected def normalizedTimeStamp(baseDate: DateTime, date: DateTime): Double =
     Days.daysBetween(baseDate, date).getDays.toDouble
 
   protected def predict(repo: RowRepository)(baseDate: DateTime, date: DateTime,
@@ -35,9 +36,9 @@ trait Regression {
       case Some(i) => Await.result(repo.list(), DURATION).filter(_.nfaItem.contains(i))
       case None => Await.result(repo.list(), DURATION)
     }).map(row => (normalizedTimeStamp(baseDate, new DateTime(row
-        .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
-        .approvedDate))))
-      .filter{ case (c, a) => outOfRangeFilter(c,a)}.toArray
+      .checkCashedDate)), normalizedTimeStamp(baseDate, new DateTime(row
+      .approvedDate))))
+      .filter { case (c, a) => outOfRangeFilter(c, a) }.toArray
 
     val (x, y) = dbResult.unzip
 
@@ -54,8 +55,8 @@ trait Regression {
     }
     // create expected results list
     val validPredictions = for ((key, value) <- predictions if value > dateDouble) yield (key, value)
-    validPredictions.map{case (key, value) => (key, baseDate.toLocalDate.plusDays(value.floor.toInt))}
-      .map{case (key, value) => (key, date.getMillis, value.toDate.getTime, value.toString)}.toList
+    validPredictions.map { case (key, value) => (key, baseDate.toLocalDate.plusDays(value.floor.toInt)) }
+      .map { case (key, value) => (key, date.getMillis, value.toDate.getTime, value.toString) }.toList
   }
 
   protected def generateData(url: String): (Array[String],
@@ -90,7 +91,7 @@ trait Regression {
     (rowProcessor.getHeaders, JavaConverters.asScalaBuffer(rowProcessor.getRows).toList)
   }
 
-  protected def filterData(headers: Array[String], rows: List[Array[String]]):List[
+  protected def filterData(headers: Array[String], rows: List[Array[String]]): List[
     (String, String, DateTime, DateTime)] = {
     val includedHeadersIdx = INCLUDED_HEADERS.map(headers.indexOf(_))
     rows.map(row =>
@@ -100,20 +101,20 @@ trait Regression {
       }.unzip._1.filter(_ != null)
       // filter missing data, and Form 3's
     ).filter(_.length > 3).filterNot(_.contains("Form 3 To Dealer"))
-    .map(row =>
-      row.zipWithIndex.map{
-        // apply parse on date iff column contains date
-        // otherwise wrap cell in Success for later filtering
-        case(s, i) => if (i < 2) Success(s) else Try(DateTime.parse(s))
-        // filter out failed parses
-      }.filter(_.isSuccess).map(_.get)
-      // filter incomplete data
-    ).filter(_.length > 3).map(r => (
+      .map(row =>
+        row.zipWithIndex.map {
+          // apply parse on date iff column contains date
+          // otherwise wrap cell in Success for later filtering
+          case (s, i) => if (i < 2) Success(s) else Try(DateTime.parse(s))
+          // filter out failed parses
+        }.filter(_.isSuccess).map(_.get)
+        // filter incomplete data
+      ).filter(_.length > 3).map(r => (
       r(0).toString,
       r(1).toString,
       r(2).asInstanceOf[DateTime],
       r(3).asInstanceOf[DateTime])
       // filter nonsensical dates
-    ).filter{case(_,_,checkCashed,approved) => approved.isAfter(checkCashed)}
+    ).filter { case (_, _, checkCashed, approved) => approved.isAfter(checkCashed) }
   }
 }
