@@ -61,7 +61,7 @@
                     $.plot("#placeholder", data, {xaxis: {autoscaleMargin: X_AUTO_MARGIN}});
                 });
             };
-            var setDisabledGuiAndSpin = function(b){
+            var setDisabledGuiAndSpin = function (b) {
                 $('#placeholder').spin(b);
                 $('#baseDatePicker').prop('disabled', b);
                 $('#checkCashedDatePicker').prop('disabled', b);
@@ -86,7 +86,7 @@
                                         ctx.fill(); // fill it yourself
                                         ctx.fillStyle = "black";
                                         ctx.textAlign = 'left';
-                                        ctx.fillText(regressionType + ": " + date, x - 185, y + 15*(idx % 2 == 0)); //now the text
+                                        ctx.fillText(regressionType + ": " + date, x - 185, y + 15 * (idx % 2 == 0)); //now the text
                                     }
                                 }
                             });

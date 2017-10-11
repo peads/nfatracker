@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * Created by peads on 9/7/17.
   */
-class UpdateAction @Inject() (parser: BodyParsers.Default)(implicit ec:
+class UpdateAction @Inject()(parser: BodyParsers.Default)(implicit ec:
 ExecutionContext) extends ActionBuilderImpl(parser) {
   override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
     val headers = request.headers
@@ -19,7 +19,7 @@ ExecutionContext) extends ActionBuilderImpl(parser) {
     if (remoteAddress.contains("127.0.0.1")) {
       Logger.info("Database updating.")
       block(request)
-    }else{
+    } else {
       Logger.warn(s"Failed attempt at updating database by, $remoteAddress")
       Future.successful(Redirect("/"))
     }
