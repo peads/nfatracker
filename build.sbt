@@ -1,6 +1,6 @@
 name := """nfatracker"""
 
-version := "0.4.3"
+version := "0.5.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -9,7 +9,7 @@ scalaVersion := "2.12.3"
 libraryDependencies += guice
 libraryDependencies += "com.typesafe.play" %% "play-slick" %  "3.0.0-M5"
 libraryDependencies += "com.typesafe.play" %% "play-slick-evolutions" % "3.0.0-M5"
-//libraryDependencies += "com.github.haifengl" % "smile-netlib" % "1.4.0"
+libraryDependencies += "com.github.haifengl" % "smile-netlib" % "1.4.0"
 libraryDependencies += "com.github.haifengl" %% "smile-scala" % "1.4.0"
 libraryDependencies += "com.univocity" % "univocity-parsers" % "2.5.2"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.16.0"
