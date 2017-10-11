@@ -20,15 +20,13 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
     * Partially applied function allowing mixin to access injected database
     * reference.
     */
-  private val PREDICT: (DateTime, DateTime, Option[String]) => List[(String, Long, Long, String)] = predict(repo)(_:
-    DateTime, _: DateTime, _: Option[String])
+  private val PREDICT: (DateTime, DateTime, Option[String]) => List[(String, Long, Long, String)]
+  = predict(repo)(_: DateTime, _: DateTime, _: Option[String])
 
   /**
     * The list action.
     */
-  def list = Action.async { implicit request =>
-    repo.list().map(req => Ok(views.html.list(req)))
-  }
+  def list = Action.async { implicit request => repo.list().map(req => Ok(views.html.list(req))) }
 
   /**
     * Update database with new transfers from NFATracker.
@@ -37,18 +35,19 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   def updateRows = updateAction { implicit request =>
     val initialTableSize = Await.result(repo.length(), DURATION)
 
-    (filterData _).tupled(generateData(NFA_TRACKER_URL)).zipWithIndex.foreach { case ((nfaItem, formType, checkCashedDate, approvedDate), id) =>
-      Await.result(
-        repo.update(id, nfaItem, formType, checkCashedDate, approvedDate)
-        , DURATION) match {
-        case Some(r) => Logger.debug("Inserted " + r.toString)
-        case None => Logger.debug("Updated " + id)
-      }
+    (filterData _).tupled(generateData(NFA_TRACKER_URL)).zipWithIndex.foreach {
+      case ((nfaItem, formType, checkCashedDate, approvedDate), id) =>
+        Await.result(
+          repo.update(id, nfaItem, formType, checkCashedDate, approvedDate)
+          , DURATION) match {
+          case Some(r) => Logger.debug("Inserted " + r.toString)
+          case None => Logger.debug("Updated " + id)
+        }
     }
 
     val finalTableSize = Await.result(repo.length(), DURATION)
     val updateSize = finalTableSize - initialTableSize
-    Logger.info(s"Database updated with $updateSize new entries.")
+    Logger.info(s"Number updated in database: $updateSize")
 
     Redirect(routes.RowController.index)
   }
@@ -56,34 +55,24 @@ class RowController @Inject()(updateAction: UpdateAction, repo: RowRepository,
   /**
     * A REST endpoint that gets all the transfers as JSON.
     */
-  def getJson = Action.async { implicit request =>
-    repo.list().map { rows =>
-      Ok(Json.toJson(rows))
-    }
-  }
+  def getJson = Action.async { implicit request => repo.list().map { rows => Ok(Json.toJson(rows)) } }
 
   /**
     * A REST endpoint that gets all the filtered transfers as JSON.
     */
-  def getFilteredJson(baseDate: String, nfaType: String) = Action.async { implicit request => {
-    repo.listWithFilters(baseDate, Option(nfaType)).map { rows =>
-      Ok(Json.toJson(rows))
-    }
-  }
+  def getFilteredJson(baseDate: String, nfaType: String) = Action.async { implicit request =>
+    repo.listWithFilters(baseDate, Option(nfaType)).map { rows => Ok(Json.toJson(rows)) }
   }
 
   /**
     * A REST endpoint that gets the prediction given the base date, check cashed date and item type.
     */
   def getPrediction(date: String, baseDate: String, nfaType: String) = Action { implicit request =>
-    Ok(Json.toJson(PREDICT(DateTime.parse(baseDate), DateTime
-      .parse(date), Option(nfaType))))
+    Ok(Json.toJson(PREDICT(DateTime.parse(baseDate), DateTime.parse(date), Option(nfaType))))
   }
 
   /**
     * The index action.
     */
-  def index = Action { implicit request =>
-    Ok(views.html.index())
-  }
+  def index = Action { implicit request => Ok(views.html.index()) }
 }
