@@ -20,6 +20,6 @@ More information about the Play ApplicationSecret can be found [here](https://ww
     boxfuse run /path/to/dist/nfatracker-<version>.zip -env=dev -jvm.args=-Dhttp.agent="Mozilla/5.0" -envvars.PLAY_SECRET=<Your play secret>
 This project is setup to be readily deployed using Boxfuse with the above command as a template.
 
-An example deployment can be found [here](http://nfatracker-peads.boxfuse.io:9000/).
+~~~An example deployment can be found [here](http://nfatracker-peads.boxfuse.io:9000/).~~~
 
 More information about deploying to Boxfuse and AWS can be found [here](https://www.playframework.com/documentation/2.6.x/Deploying-Boxfuse#Deploying-to-Boxfuse-and-AWS).
